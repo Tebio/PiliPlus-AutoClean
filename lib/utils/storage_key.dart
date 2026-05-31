@@ -144,6 +144,8 @@ abstract final class SettingBoxKey {
       showMemberShop = 'showMemberShop',
       enablePlayAll = 'enablePlayAll',
       autoRemoveWatchedLater = 'autoRemoveWatchedLater',
+      autoRemoveWatchedLaterThreshold = 'autoRemoveWatchedLaterThreshold',
+      autoRemoveWatchedLaterExcludes = 'autoRemoveWatchedLaterExcludes',
       enableTapDm = 'enableTapDm',
       setSystemBrightness = 'setSystemBrightness',
       downloadPath = 'downloadPath',

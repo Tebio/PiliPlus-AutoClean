@@ -945,6 +945,21 @@ abstract final class Pref {
   static bool get autoRemoveWatchedLater =>
       _setting.get(SettingBoxKey.autoRemoveWatchedLater, defaultValue: true);
 
+  static int get autoRemoveWatchedLaterThreshold {
+    final value = _setting.get(
+      SettingBoxKey.autoRemoveWatchedLaterThreshold,
+      defaultValue: 98,
+    ) as int;
+    return value.clamp(50, 100).toInt();
+  }
+
+  static Set<String> get autoRemoveWatchedLaterExcludes => Set<String>.from(
+    _setting.get(
+      SettingBoxKey.autoRemoveWatchedLaterExcludes,
+      defaultValue: const <String>[],
+    ),
+  );
+
   static bool get showTrayIcon =>
       _setting.get(SettingBoxKey.showTrayIcon, defaultValue: true);
 

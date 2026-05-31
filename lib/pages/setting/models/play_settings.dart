@@ -59,10 +59,16 @@ List<SettingsModel> get playSettings => [
   ),
   const SwitchModel(
     title: '看完后自动从稍后再看移除',
-    subtitle: '仅对从稍后再看进入的视频生效，播放到 98% 后等待切到下一条再后台移除',
+    subtitle: '仅对从稍后再看进入的视频生效，达到阈值后等待切到下一条再后台移除',
     leading: Icon(Icons.playlist_remove_outlined),
     setKey: SettingBoxKey.autoRemoveWatchedLater,
     defaultVal: true,
+  ),
+  NormalModel(
+    title: '稍后再看自动移除阈值',
+    leading: const Icon(Icons.percent_outlined),
+    getSubtitle: () => '当前:「${Pref.autoRemoveWatchedLaterThreshold}%」',
+    onTap: _showAutoRemoveWatchedLaterThresholdDialog,
   ),
   const SwitchModel(
     title: '全屏显示锁定按钮',
@@ -283,6 +289,31 @@ List<SettingsModel> get playSettings => [
     defaultVal: false,
   ),
 ];
+
+Future<void> _showAutoRemoveWatchedLaterThresholdDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<double>(
+    context: context,
+    builder: (context) => SliderDialog(
+      title: '稍后再看自动移除阈值',
+      min: 50.0,
+      max: 100.0,
+      divisions: 50,
+      precise: 0,
+      value: Pref.autoRemoveWatchedLaterThreshold.toDouble(),
+      suffix: '%',
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(
+      SettingBoxKey.autoRemoveWatchedLaterThreshold,
+      res.toInt(),
+    );
+    setState();
+  }
+}
 
 Future<void> _showSubtitleDialog(
   BuildContext context,

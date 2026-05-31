@@ -32,6 +32,9 @@ abstract class CommonIntroController extends GetxController
   // 是否稍后再看
   final RxBool hasLater = false.obs;
 
+  // 是否排除当前视频的稍后再看自动清理
+  final RxBool isAutoRemoveExcluded = false.obs;
+
   final Rx<List<VideoTagItem>?> videoTags = Rx<List<VideoTagItem>?>(null);
 
   bool isProcessing = false;
@@ -79,6 +82,9 @@ abstract class CommonIntroController extends GetxController
     bvid = args['bvid'];
     cid = RxInt(args['cid']);
     hasLater.value = args['sourceType'] == SourceType.watchLater;
+    isAutoRemoveExcluded.value = Pref.autoRemoveWatchedLaterExcludes.contains(
+      watchLaterAutoRemoveExcludeKey,
+    );
 
     queryVideoIntro();
     startTimer();
@@ -154,6 +160,31 @@ abstract class CommonIntroController extends GetxController
         ? UserHttp.toViewDel(aids: IdUtils.bv2av(bvid).toString())
         : UserHttp.toViewLater(bvid: bvid));
     if (res.isSuccess) hasLater.value = !hasLater.value;
+  }
+
+  String get watchLaterAutoRemoveExcludeKey {
+    if (bvid.isNotEmpty) {
+      return bvid;
+    }
+    return videoDetailCtr.aid.toString();
+  }
+
+  Future<void> toggleWatchLaterAutoRemoveExclude() async {
+    final excludes = Pref.autoRemoveWatchedLaterExcludes;
+    final key = watchLaterAutoRemoveExcludeKey;
+    if (excludes.remove(key)) {
+      isAutoRemoveExcluded.value = false;
+      SmartDialog.showToast('已取消自动清理排除');
+    } else {
+      excludes.add(key);
+      isAutoRemoveExcluded.value = true;
+      videoDetailCtr.clearPendingWatchLaterAutoRemove(key);
+      SmartDialog.showToast('当前视频不会自动从稍后再看移除');
+    }
+    await GStorage.setting.put(
+      SettingBoxKey.autoRemoveWatchedLaterExcludes,
+      excludes.toList(),
+    );
   }
 }
 

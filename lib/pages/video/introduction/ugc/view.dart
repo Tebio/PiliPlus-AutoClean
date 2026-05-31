@@ -596,6 +596,16 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
               text: '再看',
             ),
           ),
+          Obx(
+            () => ActionItem(
+              icon: const Icon(Icons.shield_outlined),
+              selectIcon: const Icon(Icons.verified_outlined),
+              onTap: introController.toggleWatchLaterAutoRemoveExclude,
+              selectStatus: introController.isAutoRemoveExcluded.value,
+              semanticsLabel: '自动清理排除',
+              text: '保留',
+            ),
+          ),
           ActionItem(
             icon: const Icon(FontAwesomeIcons.shareFromSquare),
             onTap: () => introController.actionShareVideo(context),

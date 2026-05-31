@@ -1234,10 +1234,11 @@ class VideoDetailController extends GetxController
     }
   }
 
-  static const double _watchLaterAutoRemoveThreshold = 0.98;
-
   String _watchLaterRemovalKey(int aid, String bvid) =>
       bvid.isNotEmpty ? bvid : aid.toString();
+
+  double get _watchLaterAutoRemoveThreshold =>
+      Pref.autoRemoveWatchedLaterThreshold / 100;
 
   bool _isLastPartForWatchLaterRemoval() {
     if (!isUgc) {
@@ -1258,9 +1259,11 @@ class VideoDetailController extends GetxController
   }
 
   void markWatchLaterAutoRemoveIfNeeded(Duration position) {
+    final key = _watchLaterRemovalKey(aid, bvid);
     if (!Pref.autoRemoveWatchedLater ||
         sourceType != SourceType.watchLater ||
         isFileSource ||
+        Pref.autoRemoveWatchedLaterExcludes.contains(key) ||
         !_isLastPartForWatchLaterRemoval()) {
       return;
     }
@@ -1273,7 +1276,6 @@ class VideoDetailController extends GetxController
       return;
     }
 
-    final key = _watchLaterRemovalKey(aid, bvid);
     if (_removedWatchLaterKeys.contains(key) ||
         _pendingWatchLaterRemoval?.key == key) {
       return;
@@ -1285,12 +1287,22 @@ class VideoDetailController extends GetxController
     );
   }
 
+  void clearPendingWatchLaterAutoRemove(String key) {
+    if (_pendingWatchLaterRemoval?.key == key) {
+      _pendingWatchLaterRemoval = null;
+    }
+  }
+
   void removePendingWatchLaterAfterAdvance() {
     if (!Pref.autoRemoveWatchedLater || sourceType != SourceType.watchLater) {
       return;
     }
     final pending = _pendingWatchLaterRemoval;
     if (pending == null || _removedWatchLaterKeys.contains(pending.key)) {
+      return;
+    }
+    if (Pref.autoRemoveWatchedLaterExcludes.contains(pending.key)) {
+      _pendingWatchLaterRemoval = null;
       return;
     }
 
