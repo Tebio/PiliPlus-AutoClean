@@ -307,6 +307,7 @@ class PgcIntroController extends CommonIntroController {
       this.cid.value = cid;
       queryOnlineTotal();
       queryVideoIntro(episode as EpisodeItem);
+      videoDetailCtr.removePendingWatchLaterAfterAdvance();
       return true;
     } catch (e) {
       if (kDebugMode) debugPrint('pgc onChangeEpisode: $e');

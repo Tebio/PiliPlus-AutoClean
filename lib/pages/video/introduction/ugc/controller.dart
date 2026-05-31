@@ -552,6 +552,7 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
 
       this.cid.value = cid;
       queryOnlineTotal();
+      videoDetailCtr.removePendingWatchLaterAfterAdvance();
       return true;
     } catch (e) {
       if (kDebugMode) debugPrint('ugc onChangeEpisode: $e');

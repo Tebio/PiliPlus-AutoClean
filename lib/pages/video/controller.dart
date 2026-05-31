@@ -167,6 +167,8 @@ class VideoDetailController extends GetxController
   late final RxInt seasonIndex = 0.obs;
 
   PlayerStatus? playerStatus;
+  _PendingWatchLaterRemoval? _pendingWatchLaterRemoval;
+  final Set<String> _removedWatchLaterKeys = <String>{};
 
   late final scrollKey = GlobalKey<ExtendedNestedScrollViewState>();
   late final RxBool isVertical;
@@ -1232,6 +1234,85 @@ class VideoDetailController extends GetxController
     }
   }
 
+  static const double _watchLaterAutoRemoveThreshold = 0.98;
+
+  String _watchLaterRemovalKey(int aid, String bvid) =>
+      bvid.isNotEmpty ? bvid : aid.toString();
+
+  bool _isLastPartForWatchLaterRemoval() {
+    if (!isUgc) {
+      return true;
+    }
+    try {
+      final pages = Get.find<UgcIntroController>(
+        tag: heroTag,
+      ).videoDetail.value.pages;
+      if (pages == null || pages.length <= 1) {
+        return true;
+      }
+      final index = pages.indexWhere((item) => item.cid == cid.value);
+      return index == -1 || index == pages.length - 1;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  void markWatchLaterAutoRemoveIfNeeded(Duration position) {
+    if (!Pref.autoRemoveWatchedLater ||
+        sourceType != SourceType.watchLater ||
+        isFileSource ||
+        !_isLastPartForWatchLaterRemoval()) {
+      return;
+    }
+
+    final durationMs = data.timeLength;
+    if (durationMs == null || durationMs <= 0) {
+      return;
+    }
+    if (position.inMilliseconds / durationMs < _watchLaterAutoRemoveThreshold) {
+      return;
+    }
+
+    final key = _watchLaterRemovalKey(aid, bvid);
+    if (_removedWatchLaterKeys.contains(key) ||
+        _pendingWatchLaterRemoval?.key == key) {
+      return;
+    }
+    _pendingWatchLaterRemoval = _PendingWatchLaterRemoval(
+      aid: aid,
+      bvid: bvid,
+      key: key,
+    );
+  }
+
+  void removePendingWatchLaterAfterAdvance() {
+    if (!Pref.autoRemoveWatchedLater || sourceType != SourceType.watchLater) {
+      return;
+    }
+    final pending = _pendingWatchLaterRemoval;
+    if (pending == null || _removedWatchLaterKeys.contains(pending.key)) {
+      return;
+    }
+
+    _pendingWatchLaterRemoval = null;
+    _removedWatchLaterKeys.add(pending.key);
+    Future.microtask(() async {
+      final res = await UserHttp.toViewDel(
+        aids: pending.aid.toString(),
+        showToast: false,
+      );
+      if (res.isSuccess) {
+        mediaList.removeWhere((item) => item.aid == pending.aid);
+        return;
+      }
+      _removedWatchLaterKeys.remove(pending.key);
+      if (kDebugMode) {
+        debugPrint('auto remove watch later failed: $res');
+      }
+      SmartDialog.showToast('稍后再看自动清理失败');
+    });
+  }
+
   void updateMediaListHistory(int aid) {
     if (args['sortField'] != null) {
       VideoHttp.medialistHistory(
@@ -1638,4 +1719,16 @@ class VideoDetailController extends GetxController
       res.toast();
     }
   }
+}
+
+class _PendingWatchLaterRemoval {
+  final int aid;
+  final String bvid;
+  final String key;
+
+  const _PendingWatchLaterRemoval({
+    required this.aid,
+    required this.bvid,
+    required this.key,
+  });
 }

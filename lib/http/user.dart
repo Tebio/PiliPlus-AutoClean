@@ -190,7 +190,10 @@ abstract final class UserHttp {
   }
 
   // 移除已观看
-  static Future<LoadingState<void>> toViewDel({required String aids}) async {
+  static Future<LoadingState<void>> toViewDel({
+    required String aids,
+    bool showToast = true,
+  }) async {
     final Map<String, dynamic> params = {
       'csrf': Accounts.main.csrf,
       'resources': aids,
@@ -201,10 +204,14 @@ abstract final class UserHttp {
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
     if (res.data['code'] == 0) {
-      SmartDialog.showToast('yeah！成功移除');
+      if (showToast) {
+        SmartDialog.showToast('yeah！成功移除');
+      }
       return const Success(null);
     } else {
-      SmartDialog.showToast(res.data['message'].toString());
+      if (showToast) {
+        SmartDialog.showToast(res.data['message'].toString());
+      }
       return const Error(null);
     }
   }

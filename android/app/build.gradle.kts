@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.piliplus"
+    namespace = "com.tebio.piliplus.autoclean"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -18,11 +18,14 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.piliplus"
+        applicationId = "com.tebio.piliplus.autoclean"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
     }
 
     packagingOptions.jniLibs.useLegacyPackaging = true
@@ -74,7 +77,12 @@ android {
     applicationVariants.all {
         val variant = this
         variant.outputs.forEach { output ->
-            (output as ApkVariantOutputImpl).versionCodeOverride = flutter.versionCode
+            (output as ApkVariantOutputImpl).apply {
+                versionCodeOverride = flutter.versionCode
+                if (variant.buildType.name == "release") {
+                    outputFileName = "PiliPlus_AutoClean_android_${flutter.versionName}_arm64-v8a.apk"
+                }
+            }
         }
     }
 }

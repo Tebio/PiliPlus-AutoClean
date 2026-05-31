@@ -182,6 +182,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
   void positionListener(Duration position) {
     videoDetailController.playedTime = position;
+    videoDetailController.markWatchLaterAutoRemoveIfNeeded(position);
   }
 
   @override
@@ -241,6 +242,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
 
     if (status.isCompleted) {
+      videoDetailController.markWatchLaterAutoRemoveIfNeeded(
+        videoDetailController.plPlayerController.position,
+      );
       try {
         if (videoDetailController
                 .steinEdgeInfo

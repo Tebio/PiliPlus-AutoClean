@@ -143,6 +143,7 @@ abstract final class SettingBoxKey {
       silentDownImg = 'silentDownImg',
       showMemberShop = 'showMemberShop',
       enablePlayAll = 'enablePlayAll',
+      autoRemoveWatchedLater = 'autoRemoveWatchedLater',
       enableTapDm = 'enableTapDm',
       setSystemBrightness = 'setSystemBrightness',
       downloadPath = 'downloadPath',

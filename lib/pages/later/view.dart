@@ -296,10 +296,6 @@ class _LaterPageState extends State<LaterPage>
                 onTap: () => currCtr().toViewClear(context, 2),
                 child: const Text('清空看完'),
               ),
-              PopupMenuItem(
-                onTap: () => currCtr().toViewClear(context),
-                child: const Text('清空全部'),
-              ),
             ],
           ),
           const SizedBox(width: 8),

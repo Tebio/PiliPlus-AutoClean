@@ -1,4 +1,4 @@
-package com.example.piliplus
+package com.tebio.piliplus.autoclean
 
 import android.content.Intent
 import android.content.pm.PackageManager

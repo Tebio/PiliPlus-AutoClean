@@ -58,6 +58,13 @@ List<SettingsModel> get playSettings => [
     defaultVal: false,
   ),
   const SwitchModel(
+    title: '看完后自动从稍后再看移除',
+    subtitle: '仅对从稍后再看进入的视频生效，播放到 98% 后等待切到下一条再后台移除',
+    leading: Icon(Icons.playlist_remove_outlined),
+    setKey: SettingBoxKey.autoRemoveWatchedLater,
+    defaultVal: true,
+  ),
+  const SwitchModel(
     title: '全屏显示锁定按钮',
     leading: Icon(Icons.lock_outline),
     setKey: SettingBoxKey.showFsLockBtn,

@@ -942,6 +942,9 @@ abstract final class Pref {
   static bool get enableTapDm =>
       _setting.get(SettingBoxKey.enableTapDm, defaultValue: true);
 
+  static bool get autoRemoveWatchedLater =>
+      _setting.get(SettingBoxKey.autoRemoveWatchedLater, defaultValue: true);
+
   static bool get showTrayIcon =>
       _setting.get(SettingBoxKey.showTrayIcon, defaultValue: true);
 
