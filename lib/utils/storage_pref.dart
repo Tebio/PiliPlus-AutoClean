@@ -960,6 +960,38 @@ abstract final class Pref {
     ),
   );
 
+  static String get autoRemoveWatchedLaterTitleKeywords => _setting.get(
+    SettingBoxKey.autoRemoveWatchedLaterTitleKeywords,
+    defaultValue: '',
+  );
+
+  static Set<int> get autoRemoveWatchedLaterUpMids {
+    final value = _setting.get(
+      SettingBoxKey.autoRemoveWatchedLaterUpMids,
+      defaultValue: const <int>[],
+    );
+    return switch (value) {
+      Iterable list => list
+          .map((item) => int.tryParse(item.toString()))
+          .whereType<int>()
+          .toSet(),
+      String text => text
+          .split(RegExp(r'[\s,，|]+'))
+          .map(int.tryParse)
+          .whereType<int>()
+          .toSet(),
+      _ => const <int>{},
+    };
+  }
+
+  static int get autoRemoveWatchedLaterMinDuration {
+    final value = _setting.get(
+      SettingBoxKey.autoRemoveWatchedLaterMinDuration,
+      defaultValue: 0,
+    ) as int;
+    return value < 0 ? 0 : value;
+  }
+
   static bool get showTrayIcon =>
       _setting.get(SettingBoxKey.showTrayIcon, defaultValue: true);
 

@@ -61,6 +61,10 @@ jobs:
         shell: pwsh
         run: lib/scripts/build.ps1 android
 
+      - name: Guard AutoClean customizations
+        shell: pwsh
+        run: lib/scripts/guard_autoclean.ps1
+
       - name: Flutter pub get
         run: flutter pub get
 

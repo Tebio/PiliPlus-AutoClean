@@ -1249,19 +1249,35 @@ class VideoDetailController extends GetxController
     ),
   );
 
-  String _encodeWatchLaterPending(_PendingWatchLaterRemoval pending) =>
-      '${pending.aid}\t${pending.bvid}\t${pending.key}';
+  String _pendingField(String? value) =>
+      (value ?? '').replaceAll(RegExp(r'[\t\r\n]+'), ' ');
+
+  String _encodeWatchLaterPending(_PendingWatchLaterRemoval pending) => [
+    pending.aid.toString(),
+    _pendingField(pending.bvid),
+    _pendingField(pending.key),
+    _pendingField(pending.title),
+    pending.upMid?.toString() ?? '',
+    pending.durationMs?.toString() ?? '',
+  ].join('\t');
 
   _PendingWatchLaterRemoval? _decodeWatchLaterPending(String value) {
     final parts = value.split('\t');
-    if (parts.length != 3) {
+    if (parts.length < 3) {
       return null;
     }
     final aid = int.tryParse(parts[0]);
     if (aid == null) {
       return null;
     }
-    return _PendingWatchLaterRemoval(aid: aid, bvid: parts[1], key: parts[2]);
+    return _PendingWatchLaterRemoval(
+      aid: aid,
+      bvid: parts[1],
+      key: parts[2],
+      title: parts.length > 3 ? parts[3] : null,
+      upMid: parts.length > 4 ? int.tryParse(parts[4]) : null,
+      durationMs: parts.length > 5 ? int.tryParse(parts[5]) : null,
+    );
   }
 
   void _storeWatchLaterPending(_PendingWatchLaterRemoval pending) {
@@ -1293,9 +1309,15 @@ class VideoDetailController extends GetxController
     unawaited(setting.delete(SettingBoxKey.autoRemoveWatchedLaterPending));
     for (final item in pendingList) {
       final pending = _decodeWatchLaterPending(item);
-      if (pending == null ||
-          _removedWatchLaterKeys.contains(pending.key) ||
-          Pref.autoRemoveWatchedLaterExcludes.contains(pending.key)) {
+      if (pending == null || _removedWatchLaterKeys.contains(pending.key)) {
+        continue;
+      }
+      if (Pref.autoRemoveWatchedLaterExcludes.contains(pending.key) ||
+          _isProtectedByWatchLaterAutoRemoveRules(
+            durationMs: pending.durationMs ?? 0,
+            title: pending.title,
+            upMid: pending.upMid,
+          )) {
         continue;
       }
       _removedWatchLaterKeys.add(pending.key);
@@ -1335,6 +1357,72 @@ class VideoDetailController extends GetxController
     }
   }
 
+  String? _currentWatchLaterAutoRemoveTitle() {
+    try {
+      if (isUgc) {
+        return Get.find<UgcIntroController>(
+          tag: heroTag,
+        ).videoDetail.value.title;
+      }
+      final ctr = Get.find<PgcIntroController>(tag: heroTag);
+      return [
+        ctr.pgcItem.title,
+        ctr.videoDetail.value.title,
+      ].whereType<String>().where((item) => item.isNotEmpty).join(' ');
+    } catch (_) {
+      final title = args['title'];
+      return title is String ? title : null;
+    }
+  }
+
+  int? _currentWatchLaterAutoRemoveUpMid() {
+    try {
+      if (isUgc) {
+        return Get.find<UgcIntroController>(
+          tag: heroTag,
+        ).videoDetail.value.owner?.mid;
+      }
+      return Get.find<PgcIntroController>(tag: heroTag).pgcItem.upInfo?.mid;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool _isProtectedByWatchLaterAutoRemoveRules({
+    required int durationMs,
+    String? title,
+    int? upMid,
+  }) {
+    final keywords = Pref.autoRemoveWatchedLaterTitleKeywords
+        .split(RegExp(r'[\n|]+'))
+        .map((item) => item.trim().toLowerCase())
+        .where((item) => item.isNotEmpty);
+    if (keywords.isNotEmpty) {
+      final effectiveTitle =
+          title?.toLowerCase() ??
+          _currentWatchLaterAutoRemoveTitle()?.toLowerCase() ??
+          '';
+      if (keywords.any(effectiveTitle.contains)) {
+        return true;
+      }
+    }
+
+    final upMids = Pref.autoRemoveWatchedLaterUpMids;
+    if (upMids.isNotEmpty) {
+      final effectiveUpMid = upMid ?? _currentWatchLaterAutoRemoveUpMid();
+      if (effectiveUpMid != null && upMids.contains(effectiveUpMid)) {
+        return true;
+      }
+    }
+
+    final minDuration = Pref.autoRemoveWatchedLaterMinDuration;
+    if (minDuration > 0 && durationMs >= minDuration * 1000) {
+      return true;
+    }
+
+    return false;
+  }
+
   void markWatchLaterAutoRemoveIfNeeded(Duration position) {
     final key = _watchLaterRemovalKey(aid, bvid);
     if (!Pref.autoRemoveWatchedLater ||
@@ -1349,6 +1437,15 @@ class VideoDetailController extends GetxController
     if (durationMs == null || durationMs <= 0) {
       return;
     }
+    final title = _currentWatchLaterAutoRemoveTitle();
+    final upMid = _currentWatchLaterAutoRemoveUpMid();
+    if (_isProtectedByWatchLaterAutoRemoveRules(
+      durationMs: durationMs,
+      title: title,
+      upMid: upMid,
+    )) {
+      return;
+    }
     if (position.inMilliseconds / durationMs < _watchLaterAutoRemoveThreshold) {
       return;
     }
@@ -1361,6 +1458,9 @@ class VideoDetailController extends GetxController
       aid: aid,
       bvid: bvid,
       key: key,
+      title: title,
+      upMid: upMid,
+      durationMs: durationMs,
     );
     _storeWatchLaterPending(_pendingWatchLaterRemoval!);
   }
@@ -1818,10 +1918,16 @@ class _PendingWatchLaterRemoval {
   final int aid;
   final String bvid;
   final String key;
+  final String? title;
+  final int? upMid;
+  final int? durationMs;
 
   const _PendingWatchLaterRemoval({
     required this.aid,
     required this.bvid,
     required this.key,
+    this.title,
+    this.upMid,
+    this.durationMs,
   });
 }

@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 
+import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/models/common/super_chat_type.dart';
 import 'package:PiliPlus/models/common/video/subtitle_pref_type.dart';
@@ -69,6 +70,29 @@ List<SettingsModel> get playSettings => [
     leading: const Icon(Icons.percent_outlined),
     getSubtitle: () => '当前:「${Pref.autoRemoveWatchedLaterThreshold}%」',
     onTap: _showAutoRemoveWatchedLaterThresholdDialog,
+  ),
+  getBanWordModel(
+    title: '稍后再看保留标题关键词',
+    key: SettingBoxKey.autoRemoveWatchedLaterTitleKeywords,
+    onChanged: (_) {},
+  ),
+  NormalModel(
+    title: '稍后再看保留UP主UID',
+    leading: const Icon(Icons.person_pin_outlined),
+    getSubtitle: () {
+      final mids = Pref.autoRemoveWatchedLaterUpMids;
+      return mids.isEmpty ? '点击添加' : mids.join(' | ');
+    },
+    onTap: _showAutoRemoveWatchedLaterUpMidsDialog,
+  ),
+  getVideoFilterSelectModel(
+    title: '稍后再看保留视频时长',
+    subtitle: '当前时长 >= 该值的视频不会自动移除，0 为关闭',
+    suffix: 's',
+    key: SettingBoxKey.autoRemoveWatchedLaterMinDuration,
+    values: [0, 1800, 3600, 7200],
+    defaultValue: 0,
+    isFilter: false,
   ),
   const SwitchModel(
     title: '全屏显示锁定按钮',
@@ -313,6 +337,64 @@ Future<void> _showAutoRemoveWatchedLaterThresholdDialog(
     );
     setState();
   }
+}
+
+Future<void> _showAutoRemoveWatchedLaterUpMidsDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  var editValue = Pref.autoRemoveWatchedLaterUpMids.join('|');
+  await showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      constraints: Style.dialogFixedConstraints,
+      title: const Text('稍后再看保留UP主UID'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('使用 |、逗号、空格或换行隔开'),
+          TextFormField(
+            autofocus: true,
+            initialValue: editValue,
+            textInputAction: TextInputAction.newline,
+            minLines: 1,
+            maxLines: 4,
+            keyboardType: TextInputType.multiline,
+            onChanged: (value) => editValue = value,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: Get.back,
+          child: Text(
+            '取消',
+            style: TextStyle(color: ColorScheme.of(context).outline),
+          ),
+        ),
+        TextButton(
+          child: const Text('保存'),
+          onPressed: () {
+            final mids = editValue
+                .split(RegExp(r'[\s,，|]+'))
+                .map(int.tryParse)
+                .whereType<int>()
+                .toSet()
+                .toList()
+              ..sort();
+            GStorage.setting.put(
+              SettingBoxKey.autoRemoveWatchedLaterUpMids,
+              mids,
+            );
+            Get.back();
+            setState();
+            SmartDialog.showToast('已保存');
+          },
+        ),
+      ],
+    ),
+  );
 }
 
 Future<void> _showSubtitleDialog(
