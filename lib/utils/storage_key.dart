@@ -146,6 +146,7 @@ abstract final class SettingBoxKey {
       autoRemoveWatchedLater = 'autoRemoveWatchedLater',
       autoRemoveWatchedLaterThreshold = 'autoRemoveWatchedLaterThreshold',
       autoRemoveWatchedLaterExcludes = 'autoRemoveWatchedLaterExcludes',
+      autoRemoveWatchedLaterPending = 'autoRemoveWatchedLaterPending',
       enableTapDm = 'enableTapDm',
       setSystemBrightness = 'setSystemBrightness',
       downloadPath = 'downloadPath',

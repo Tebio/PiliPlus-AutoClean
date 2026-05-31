@@ -62,6 +62,7 @@ import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
@@ -414,6 +415,7 @@ class VideoDetailController extends GetxController
       _mediaDesc = args['desc'];
       getMediaList();
     }
+    _removeStoredWatchLaterPendingOnOpen();
 
     tabCtr = TabController(
       length: 2,
@@ -1240,6 +1242,81 @@ class VideoDetailController extends GetxController
   double get _watchLaterAutoRemoveThreshold =>
       Pref.autoRemoveWatchedLaterThreshold / 100;
 
+  List<String> get _storedWatchLaterPending => List<String>.from(
+    setting.get(
+      SettingBoxKey.autoRemoveWatchedLaterPending,
+      defaultValue: const <String>[],
+    ),
+  );
+
+  String _encodeWatchLaterPending(_PendingWatchLaterRemoval pending) =>
+      '${pending.aid}\t${pending.bvid}\t${pending.key}';
+
+  _PendingWatchLaterRemoval? _decodeWatchLaterPending(String value) {
+    final parts = value.split('\t');
+    if (parts.length != 3) {
+      return null;
+    }
+    final aid = int.tryParse(parts[0]);
+    if (aid == null) {
+      return null;
+    }
+    return _PendingWatchLaterRemoval(aid: aid, bvid: parts[1], key: parts[2]);
+  }
+
+  void _storeWatchLaterPending(_PendingWatchLaterRemoval pending) {
+    final encoded = _encodeWatchLaterPending(pending);
+    final pendingList = _storedWatchLaterPending
+      ..removeWhere((item) => _decodeWatchLaterPending(item)?.key == pending.key)
+      ..add(encoded);
+    unawaited(
+      setting.put(SettingBoxKey.autoRemoveWatchedLaterPending, pendingList),
+    );
+  }
+
+  void _removeStoredWatchLaterPending(String key) {
+    final pendingList = _storedWatchLaterPending
+      ..removeWhere((item) => _decodeWatchLaterPending(item)?.key == key);
+    unawaited(
+      setting.put(SettingBoxKey.autoRemoveWatchedLaterPending, pendingList),
+    );
+  }
+
+  void _removeStoredWatchLaterPendingOnOpen() {
+    if (!Pref.autoRemoveWatchedLater || isFileSource) {
+      return;
+    }
+    final pendingList = _storedWatchLaterPending;
+    if (pendingList.isEmpty) {
+      return;
+    }
+    unawaited(setting.delete(SettingBoxKey.autoRemoveWatchedLaterPending));
+    for (final item in pendingList) {
+      final pending = _decodeWatchLaterPending(item);
+      if (pending == null ||
+          _removedWatchLaterKeys.contains(pending.key) ||
+          Pref.autoRemoveWatchedLaterExcludes.contains(pending.key)) {
+        continue;
+      }
+      _removedWatchLaterKeys.add(pending.key);
+      Future.microtask(() async {
+        final res = await UserHttp.toViewDel(
+          aids: pending.aid.toString(),
+          showToast: false,
+        );
+        if (res.isSuccess) {
+          mediaList.removeWhere((item) => item.aid == pending.aid);
+          return;
+        }
+        _removedWatchLaterKeys.remove(pending.key);
+        _storeWatchLaterPending(pending);
+        if (kDebugMode) {
+          debugPrint('stored auto remove watch later failed: $res');
+        }
+      });
+    }
+  }
+
   bool _isLastPartForWatchLaterRemoval() {
     if (!isUgc) {
       return true;
@@ -1285,12 +1362,14 @@ class VideoDetailController extends GetxController
       bvid: bvid,
       key: key,
     );
+    _storeWatchLaterPending(_pendingWatchLaterRemoval!);
   }
 
   void clearPendingWatchLaterAutoRemove(String key) {
     if (_pendingWatchLaterRemoval?.key == key) {
       _pendingWatchLaterRemoval = null;
     }
+    _removeStoredWatchLaterPending(key);
   }
 
   void removePendingWatchLaterAfterAdvance() {
@@ -1303,10 +1382,12 @@ class VideoDetailController extends GetxController
     }
     if (Pref.autoRemoveWatchedLaterExcludes.contains(pending.key)) {
       _pendingWatchLaterRemoval = null;
+      _removeStoredWatchLaterPending(pending.key);
       return;
     }
 
     _pendingWatchLaterRemoval = null;
+    _removeStoredWatchLaterPending(pending.key);
     _removedWatchLaterKeys.add(pending.key);
     Future.microtask(() async {
       final res = await UserHttp.toViewDel(
