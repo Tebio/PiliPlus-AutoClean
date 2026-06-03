@@ -48,7 +48,9 @@ android {
     }
 
     buildFeatures {
-        resValues = true
+        if (project.hasProperty("dev")) {
+            resValues = true
+        }
     }
 
     buildTypes {
