@@ -537,7 +537,6 @@ class VideoDetailController extends GetxController
           child: plPlayerController.darkVideoPage
               ? Theme(data: ThemeUtils.darkTheme, child: panel())
               : panel(),
-          isFullScreen: () => plPlayerController.isFullScreen.value,
         );
       } else {
         childKey.currentState?.showBottomSheet(
@@ -1053,7 +1052,6 @@ class VideoDetailController extends GetxController
                 videoDetailController: this,
                 plPlayerController: plPlayerController,
               ),
-        isFullScreen: () => plPlayerController.isFullScreen.value,
       );
     } else {
       childKey.currentState?.showBottomSheet(
@@ -1666,7 +1664,6 @@ class VideoDetailController extends GetxController
                 isStein: graphVersion != null,
                 title: title,
               ),
-        isFullScreen: () => plPlayerController.isFullScreen.value,
       );
     } else {
       childKey.currentState?.showBottomSheet(
