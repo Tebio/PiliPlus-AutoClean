@@ -50,6 +50,11 @@ Assert-FileContains `
   -Message 'AutoClean APK filename rule was lost.'
 
 Assert-FileContains `
+  -Path 'android/app/src/main/java/com/example/piliplus/MediaHelper.java' `
+  -Pattern 'package com\.tebio\.piliplus\.autoclean;' `
+  -Message 'MediaHelper package no longer matches the AutoClean Android namespace.'
+
+Assert-FileContains `
   -Path 'lib/common/constants.dart' `
   -Pattern 'PiliPlus AutoClean' `
   -Message 'AutoClean app name constant was lost.'
