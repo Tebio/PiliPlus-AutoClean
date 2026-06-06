@@ -31,6 +31,28 @@ jobs:
           git fetch upstream main
           git merge --no-ff --no-edit upstream/main
 
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+          cache: true
+
+      - name: Apply local Flutter patches
+        shell: pwsh
+        run: lib/scripts/patch.ps1 android
+        continue-on-error: true
+
+      - name: Guard AutoClean customizations
+        shell: pwsh
+        run: lib/scripts/guard_autoclean.ps1
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Flutter analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
       - name: Push synced result
         run: |
           git push origin HEAD:main

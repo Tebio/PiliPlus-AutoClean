@@ -90,6 +90,21 @@ Assert-FileContains `
   -Message 'Server-side watched item cleanup was lost.'
 
 Assert-FileContains `
+  -Path '.github/workflows/sync-upstream.yml' `
+  -Pattern 'Guard AutoClean customizations' `
+  -Message 'Upstream sync no longer guards AutoClean customizations.'
+
+Assert-FileContains `
+  -Path '.github/workflows/sync-upstream.yml' `
+  -Pattern 'Flutter analyze' `
+  -Message 'Upstream sync no longer validates merged Dart code.'
+
+Assert-FileContains `
+  -Path '.github/workflows/build.yml' `
+  -Pattern 'Report build failure' `
+  -Message 'Build failure issue reporting was lost.'
+
+Assert-FileContains `
   -Path 'lib/pages/video/controller.dart' `
   -Pattern 'autoRemoveWatchedLaterTitleKeywords' `
   -Message 'Watch later title keyword protection was lost.'

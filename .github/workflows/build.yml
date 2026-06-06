@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   android:
@@ -104,3 +105,44 @@ jobs:
         with:
           name: Android_arm64-v8a
           path: ${{ env.apk_name }}
+
+      - name: Report build failure
+        if: ${{ failure() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '[Build Failure] AutoClean Android';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              'AutoClean Android 构建失败。',
+              '',
+              `- Workflow: ${context.workflow}`,
+              `- Run: [#${context.runNumber}](${runUrl})`,
+              `- Commit: \`${context.sha}\``,
+              `- Branch: \`${context.ref.replace('refs/heads/', '')}\``,
+              `- Trigger: \`${context.eventName}\``,
+            ].join('\n');
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = issues.find(
+              (issue) => !issue.pull_request && issue.title === title,
+            );
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              });
+            }
