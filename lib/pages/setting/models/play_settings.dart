@@ -60,7 +60,7 @@ List<SettingsModel> get playSettings => [
   ),
   const SwitchModel(
     title: '看完后自动从稍后再看移除',
-    subtitle: '仅对从稍后再看进入的视频生效，达到阈值后等待切到下一条再后台移除',
+    subtitle: '仅对从稍后再看进入的视频生效，播放器确认看完且达到阈值后，切到下一条时后台移除',
     leading: Icon(Icons.playlist_remove_outlined),
     setKey: SettingBoxKey.autoRemoveWatchedLater,
     defaultVal: true,

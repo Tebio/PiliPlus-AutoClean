@@ -1256,11 +1256,12 @@ class VideoDetailController extends GetxController
     _pendingField(pending.title),
     pending.upMid?.toString() ?? '',
     pending.durationMs?.toString() ?? '',
+    'completed',
   ].join('\t');
 
   _PendingWatchLaterRemoval? _decodeWatchLaterPending(String value) {
     final parts = value.split('\t');
-    if (parts.length < 3) {
+    if (parts.length < 7 || parts[6] != 'completed') {
       return null;
     }
     final aid = int.tryParse(parts[0]);

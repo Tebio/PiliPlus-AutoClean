@@ -64,10 +64,25 @@ Assert-FileContains `
   -Pattern 'markWatchLaterAutoRemoveIfNeeded' `
   -Message 'Watch later autoclean marker logic was lost.'
 
+Assert-FileNotContains `
+  -Path 'lib/pages/video/view.dart' `
+  -Pattern 'void positionListener\(Duration position\)\s*\{[^}]*markWatchLaterAutoRemoveIfNeeded' `
+  -Message 'Watch later autoclean is armed by playback progress again.'
+
 Assert-FileContains `
   -Path 'lib/pages/video/controller.dart' `
   -Pattern 'autoRemoveWatchedLaterPending' `
   -Message 'Persistent pending removal queue was lost.'
+
+Assert-FileContains `
+  -Path 'lib/pages/video/controller.dart' `
+  -Pattern "parts\.length < 7 \|\| parts\[6\] != 'completed'" `
+  -Message 'Legacy progress-based pending removals are accepted again.'
+
+Assert-FileContains `
+  -Path 'lib/pages/later/controller.dart' `
+  -Pattern '_shouldAutoRemoveViewedItem' `
+  -Message 'Server-side watched item cleanup was lost.'
 
 Assert-FileContains `
   -Path 'lib/pages/video/controller.dart' `

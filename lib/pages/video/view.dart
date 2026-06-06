@@ -182,7 +182,6 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
   void positionListener(Duration position) {
     videoDetailController.playedTime = position;
-    videoDetailController.markWatchLaterAutoRemoveIfNeeded(position);
   }
 
   @override

@@ -13,6 +13,7 @@ import 'package:PiliPlus/pages/later/base_controller.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -101,11 +102,77 @@ class LaterController extends MultiSelectController<LaterData, LaterItemModel>
   RxInt get rxCount => baseCtr.checkedCount;
 
   @override
-  Future<LoadingState<LaterData>> customGetData() => UserHttp.seeYouLater(
-    page: page,
-    viewed: laterViewType.type,
-    asc: asc.value,
-  );
+  Future<LoadingState<LaterData>> customGetData() async {
+    var result = await UserHttp.seeYouLater(
+      page: page,
+      viewed: laterViewType.type,
+      asc: asc.value,
+    );
+    if (laterViewType != LaterViewType.all ||
+        !Pref.autoRemoveWatchedLater ||
+        result is! Success<LaterData>) {
+      return result;
+    }
+
+    final watchedAids = result.response.list
+        ?.where(_shouldAutoRemoveViewedItem)
+        .map((item) => item.aid!)
+        .toList();
+    if (watchedAids == null || watchedAids.isEmpty) {
+      return result;
+    }
+
+    final removeResult = await UserHttp.toViewDel(
+      aids: watchedAids.join(','),
+      showToast: false,
+    );
+    if (!removeResult.isSuccess) {
+      return result;
+    }
+
+    result = await UserHttp.seeYouLater(
+      page: page,
+      viewed: laterViewType.type,
+      asc: asc.value,
+    );
+    return result;
+  }
+
+  bool _shouldAutoRemoveViewedItem(LaterItemModel item) {
+    if (item.progress != -1 || item.aid == null) {
+      return false;
+    }
+
+    final key = item.bvid?.isNotEmpty == true
+        ? item.bvid!
+        : item.aid.toString();
+    if (Pref.autoRemoveWatchedLaterExcludes.contains(key)) {
+      return false;
+    }
+
+    final title = item.title?.toLowerCase() ?? '';
+    final keywords = Pref.autoRemoveWatchedLaterTitleKeywords
+        .split(RegExp(r'[\n|]+'))
+        .map((item) => item.trim().toLowerCase())
+        .where((item) => item.isNotEmpty);
+    if (keywords.any(title.contains)) {
+      return false;
+    }
+
+    final upMids = Pref.autoRemoveWatchedLaterUpMids;
+    if (item.owner?.mid case final int upMid when upMids.contains(upMid)) {
+      return false;
+    }
+
+    final minDuration = Pref.autoRemoveWatchedLaterMinDuration;
+    if (minDuration > 0 &&
+        item.duration != null &&
+        item.duration! >= minDuration) {
+      return false;
+    }
+
+    return true;
+  }
 
   @override
   void onInit() {
