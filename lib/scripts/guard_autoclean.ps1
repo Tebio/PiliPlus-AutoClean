@@ -65,6 +65,21 @@ Assert-FileContains `
   -Message 'Update check no longer points to the AutoClean fork releases.'
 
 Assert-FileContains `
+  -Path 'lib/http/api.dart' `
+  -Pattern 'releases/latest/download/update\.json' `
+  -Message 'Stable AutoClean update metadata endpoint was lost.'
+
+Assert-FileContains `
+  -Path 'lib/utils/update.dart' `
+  -Pattern '_releaseVersionCode' `
+  -Message 'Version-code update comparison was lost.'
+
+Assert-FileContains `
+  -Path '.github/workflows/build.yml' `
+  -Pattern 'update\.json' `
+  -Message 'Release update metadata generation was lost.'
+
+Assert-FileContains `
   -Path 'lib/pages/video/controller.dart' `
   -Pattern 'markWatchLaterAutoRemoveIfNeeded' `
   -Message 'Watch later autoclean marker logic was lost.'

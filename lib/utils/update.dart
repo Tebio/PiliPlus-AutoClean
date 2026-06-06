@@ -16,32 +16,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 abstract final class Update {
+  static bool _checking = false;
+  static int? _shownVersionCode;
+
   // 检查更新
-  static Future<void> checkUpdate([bool isAuto = true]) async {
-    if (kDebugMode) return;
-    SmartDialog.dismiss();
+  static Future<bool> checkUpdate([bool isAuto = true]) async {
+    if (kDebugMode || _checking) return false;
+    _checking = true;
     try {
-      final res = await Request().get(
-        Api.latestApp,
-        options: Options(
-          headers: {'user-agent': BrowserUa.mob},
-          extra: {'account': const NoAccount()},
-        ),
-      );
-      if (res.data is! Map || res.data.isEmpty) {
+      final data = await _getLatestRelease(isAuto ? 3 : 1);
+      if (data == null) {
         if (!isAuto) {
           SmartDialog.showToast('检查更新失败，GitHub接口未返回数据，请检查网络');
         }
-        return;
+        return false;
       }
-      final data = res.data as Map;
-      final int latest =
-          DateTime.parse(data['created_at']).millisecondsSinceEpoch ~/ 1000;
-      if (BuildConfig.buildTime >= latest) {
+
+      final latestVersionCode = _releaseVersionCode(data);
+      final isLatest = latestVersionCode != null
+          ? BuildConfig.versionCode >= latestVersionCode
+          : BuildConfig.buildTime >= _releaseTime(data);
+      if (isLatest) {
         if (!isAuto) {
           SmartDialog.showToast('已是最新版本');
         }
+        return true;
       } else {
+        if (latestVersionCode != null &&
+            _shownVersionCode == latestVersionCode) {
+          return true;
+        }
+        _shownVersionCode = latestVersionCode;
         SmartDialog.show(
           animationType: SmartAnimationType.centerFade_otherSlide,
           builder: (context) {
@@ -109,10 +114,81 @@ abstract final class Update {
             );
           },
         );
+        return true;
       }
     } catch (e) {
       if (kDebugMode) debugPrint('failed to check update: $e');
+      if (!isAuto) {
+        SmartDialog.showToast('检查更新失败，请稍后重试');
+      }
+      return false;
+    } finally {
+      _checking = false;
     }
+  }
+
+  static Future<Map?> _getLatestRelease(int attempts) async {
+    for (var attempt = 0; attempt < attempts; attempt++) {
+      final metadata = await _requestRelease(
+        Api.latestAppMetadata,
+        cacheBust: true,
+      );
+      if (metadata != null) {
+        return metadata;
+      }
+
+      final apiData = await _requestRelease(Api.latestApp);
+      if (apiData != null) {
+        return apiData;
+      }
+
+      if (attempt + 1 < attempts) {
+        await Future.delayed(Duration(seconds: 2 << attempt));
+      }
+    }
+    return null;
+  }
+
+  static Future<Map?> _requestRelease(
+    String url, {
+    bool cacheBust = false,
+  }) async {
+    final res = await Request().get(
+      url,
+      queryParameters: cacheBust
+          ? {'t': DateTime.now().millisecondsSinceEpoch}
+          : null,
+      options: Options(
+        headers: {
+          'user-agent': BrowserUa.mob,
+          'cache-control': 'no-cache',
+        },
+        extra: {'account': const NoAccount()},
+      ),
+    );
+    return res.statusCode == 200 && res.data is Map && res.data.isNotEmpty
+        ? res.data as Map
+        : null;
+  }
+
+  static int? _releaseVersionCode(Map data) {
+    final direct = switch (data['version_code']) {
+      final int value => value,
+      final String value => int.tryParse(value),
+      _ => null,
+    };
+    if (direct != null) {
+      return direct;
+    }
+    final match = RegExp(r'\+(\d+)$').firstMatch('${data['tag_name'] ?? ''}');
+    return match == null ? null : int.tryParse(match.group(1)!);
+  }
+
+  static int _releaseTime(Map data) {
+    final value = data['published_at'] ?? data['created_at'];
+    return value is String
+        ? DateTime.parse(value).millisecondsSinceEpoch ~/ 1000
+        : 0;
   }
 
   // 下载适用于当前系统的安装包

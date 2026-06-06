@@ -67,14 +67,14 @@ class MainController extends GetxController
   late bool isPlaying = false;
 
   static const _period = 5 * 60 * 1000;
+  static const _updatePeriod = 6 * 60 * 60 * 1000;
   late int _lastSelectTime = 0;
+  int _lastUpdateCheckAt = 0;
+  bool _isCheckingUpdate = false;
 
   @override
   void onInit() {
     super.onInit();
-    if (Pref.autoUpdate) {
-      Update.checkUpdate();
-    }
 
     setNavBarConfig();
 
@@ -115,6 +115,34 @@ class MainController extends GetxController
         lastCheckUnreadAt = DateTime.now().millisecondsSinceEpoch;
         queryUnreadMsg();
       }
+    }
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    unawaited(
+      Future.delayed(
+        const Duration(seconds: 2),
+        () => checkUpdateIfNeeded(force: true),
+      ),
+    );
+  }
+
+  Future<void> checkUpdateIfNeeded({bool force = false}) async {
+    if (!Pref.autoUpdate || _isCheckingUpdate) {
+      return;
+    }
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (!force && now - _lastUpdateCheckAt < _updatePeriod) {
+      return;
+    }
+
+    _isCheckingUpdate = true;
+    final success = await Update.checkUpdate();
+    _isCheckingUpdate = false;
+    if (success) {
+      _lastUpdateCheckAt = now;
     }
   }
 

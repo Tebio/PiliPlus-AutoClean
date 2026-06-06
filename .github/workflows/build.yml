@@ -88,6 +88,22 @@ jobs:
           cp "${apk_files[0]}" "$apk_name"
           echo "apk_name=$apk_name" >> "$GITHUB_ENV"
           echo "release_tag=autoclean-${version}" >> "$GITHUB_ENV"
+          jq -n \
+            --arg tag_name "autoclean-${version}" \
+            --arg version_name "${version}" \
+            --argjson version_code "${version_code}" \
+            --arg apk_name "${apk_name}" \
+            --arg download_url "https://github.com/Tebio/PiliPlus-AutoClean/releases/latest/download/${apk_name}" \
+            '{
+              tag_name: $tag_name,
+              version_name: $version_name,
+              version_code: $version_code,
+              body: "AutoClean Android arm64-v8a build.",
+              assets: [{
+                name: $apk_name,
+                browser_download_url: $download_url
+              }]
+            }' > update.json
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -98,7 +114,9 @@ jobs:
             AutoClean Android arm64-v8a build.
 
             Upstream version is recorded in pubspec.yaml and versionName.
-          files: ${{ env.apk_name }}
+          files: |
+            ${{ env.apk_name }}
+            update.json
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

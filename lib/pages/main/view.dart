@@ -107,7 +107,8 @@ class _MainAppState extends PopScopeState<MainApp>
       _mainController
         ..checkUnreadDynamic()
         ..checkDefaultSearch(true)
-        ..checkUnread(_mainController.useBottomNav);
+        ..checkUnread(_mainController.useBottomNav)
+        ..checkUpdateIfNeeded();
     }
   }
 
