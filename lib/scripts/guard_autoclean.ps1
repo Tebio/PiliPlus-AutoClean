@@ -105,6 +105,16 @@ Assert-FileContains `
   -Message 'Build failure issue reporting was lost.'
 
 Assert-FileContains `
+  -Path 'lib/common/widgets/video_card/video_card_v.dart' `
+  -Pattern 'WatchLaterButton' `
+  -Message 'Home cover watch later button was lost.'
+
+Assert-FileContains `
+  -Path 'lib/pages/dynamics/widgets/video_panel.dart' `
+  -Pattern 'WatchLaterButton' `
+  -Message 'Dynamic cover watch later button was lost.'
+
+Assert-FileContains `
   -Path 'lib/pages/video/controller.dart' `
   -Pattern 'autoRemoveWatchedLaterTitleKeywords' `
   -Message 'Watch later title keyword protection was lost.'

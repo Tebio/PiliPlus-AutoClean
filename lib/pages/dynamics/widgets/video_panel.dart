@@ -3,6 +3,7 @@ import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+import 'package:PiliPlus/common/widgets/watch_later_button.dart';
 import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
@@ -61,7 +62,7 @@ Widget videoSeasonWidget(
               if (video.badge?.text case final badge?)
                 PBadge(
                   text: badge,
-                  top: 8.0,
+                  top: item.type == 'DYNAMIC_TYPE_AV' ? 48.0 : 8.0,
                   right: 10.0,
                   bottom: null,
                   left: null,
@@ -69,6 +70,16 @@ Widget videoSeasonWidget(
                     '充电专属' => PBadgeType.error,
                     _ => PBadgeType.primary,
                   },
+                ),
+              if (item.type == 'DYNAMIC_TYPE_AV' &&
+                  (video.bvid?.isNotEmpty == true || video.aid != null))
+                Positioned(
+                  top: 8,
+                  right: 10,
+                  child: WatchLaterButton(
+                    bvid: video.bvid,
+                    aid: video.aid,
+                  ),
                 ),
               Positioned(
                 left: 0,

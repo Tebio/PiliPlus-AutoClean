@@ -4,6 +4,7 @@ import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/stat/stat.dart';
 import 'package:PiliPlus/common/widgets/video_popup_menu.dart';
+import 'package:PiliPlus/common/widgets/watch_later_button.dart';
 import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/common/stat_type.dart';
 import 'package:PiliPlus/models/home/rcmd/result.dart';
@@ -114,6 +115,15 @@ class VideoCardV extends StatelessWidget {
                             height: maxHeight,
                             type: .emote,
                           ),
+                          if (videoItem.goto == 'av')
+                            Positioned(
+                              top: 7,
+                              right: 7,
+                              child: WatchLaterButton(
+                                bvid: videoItem.bvid,
+                                aid: videoItem.aid,
+                              ),
+                            ),
                           if (videoItem.duration > 0)
                             PBadge(
                               bottom: 6,
