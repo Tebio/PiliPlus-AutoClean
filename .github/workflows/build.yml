@@ -110,6 +110,7 @@ jobs:
         with:
           tag_name: ${{ env.release_tag }}
           name: PiliPlus AutoClean ${{ env.version }}
+          make_latest: true
           body: |
             AutoClean Android arm64-v8a build.
 
