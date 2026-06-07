@@ -29,7 +29,25 @@ jobs:
         run: |
           git remote add upstream https://github.com/bggRGjQaUbCoE/PiliPlus.git
           git fetch upstream main
-          git merge --no-ff --no-edit upstream/main
+
+          if ! git merge --no-ff --no-edit upstream/main; then
+            echo "Merge conflict detected. Trying to keep local workflow customizations."
+
+            conflicted_files="$(git diff --name-only --diff-filter=U || true)"
+            echo "$conflicted_files"
+
+            non_workflow_conflicts="$(echo "$conflicted_files" | grep -v '^.github/workflows/' || true)"
+            if [ -n "$non_workflow_conflicts" ]; then
+              echo "Non-workflow conflicts found. Manual resolution required:"
+              echo "$non_workflow_conflicts"
+              git status
+              exit 1
+            fi
+
+            git checkout --ours .github/workflows
+            git add .github/workflows
+            git commit --no-edit
+          fi
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
