@@ -31,12 +31,14 @@ jobs:
           git fetch upstream main
 
           if ! git merge --no-ff --no-edit upstream/main; then
-            echo "Merge conflict detected. Trying to keep local workflow customizations."
+            echo "Merge conflict detected. Checking whether conflicts are limited to GitHub workflow files."
 
             conflicted_files="$(git diff --name-only --diff-filter=U || true)"
-            echo "$conflicted_files"
+            deleted_by_us="$(git diff --name-only --diff-filter=DU || true)"
+            all_conflicts="$(printf '%s\n%s\n' "$conflicted_files" "$deleted_by_us" | sed '/^$/d' | sort -u)"
+            echo "$all_conflicts"
 
-            non_workflow_conflicts="$(echo "$conflicted_files" | grep -v '^.github/workflows/' || true)"
+            non_workflow_conflicts="$(echo "$all_conflicts" | grep -v '^.github/workflows/' || true)"
             if [ -n "$non_workflow_conflicts" ]; then
               echo "Non-workflow conflicts found. Manual resolution required:"
               echo "$non_workflow_conflicts"
@@ -44,7 +46,13 @@ jobs:
               exit 1
             fi
 
-            git checkout --ours .github/workflows
+            echo "Keeping local AutoClean workflow customizations."
+            git checkout --ours .github/workflows/build.yml .github/workflows/sync-upstream.yml || true
+            git rm -f \
+              .github/workflows/ios.yml \
+              .github/workflows/linux_x64.yml \
+              .github/workflows/mac.yml \
+              .github/workflows/win_x64.yml || true
             git add .github/workflows
             git commit --no-edit
           fi
