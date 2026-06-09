@@ -11,3 +11,15 @@ if (Test-Path -LiteralPath $GeetestDialog) {
         Write-Host "Applied AutoClean hotfix: Geetest config analyze error."
     }
 }
+
+$SliderDialog = "lib/pages/setting/widgets/slider_dialog.dart"
+if (Test-Path -LiteralPath $SliderDialog) {
+    $content = Get-Content -LiteralPath $SliderDialog -Raw
+    $fixed = $content
+    $fixed = $fixed -replace "final Widget title;", "final Object title;"
+    $fixed = $fixed -replace "title: widget\.title,", "title: widget.title is Widget ? widget.title as Widget : Text(widget.title.toString()),"
+    if ($fixed -ne $content) {
+        Set-Content -LiteralPath $SliderDialog -Value $fixed -Encoding utf8
+        Write-Host "Applied AutoClean hotfix: SliderDialog title compatibility."
+    }
+}
