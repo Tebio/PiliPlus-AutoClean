@@ -2,6 +2,16 @@ param(
     [string]$platform = ""
 )
 
+$GeetestDialog = "lib/pages/login/geetest/geetest_webview_dialog.dart"
+if (Test-Path -LiteralPath $GeetestDialog) {
+    $content = Get-Content -LiteralPath $GeetestDialog -Raw
+    $fixed = $content -replace "return Error\(res\.data\['message'\]\);", "return const Error('获取验证码配置失败');"
+    if ($fixed -ne $content) {
+        Set-Content -LiteralPath $GeetestDialog -Value $fixed -Encoding utf8
+        Write-Host "Applied AutoClean Geetest analyze fix."
+    }
+}
+
 # TODO: remove
 # https://github.com/flutter/flutter/issues/182281
 $NewOverScrollIndicator = "362b1de29974ffc1ed6faa826e1df870d7bec75f";
