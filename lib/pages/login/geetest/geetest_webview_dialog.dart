@@ -88,8 +88,9 @@ class _GeetestWebviewDialogState extends State<GeetestWebviewDialog> {
           return Error(data);
         }
       }
+      return Error(data);
     }
-    return Error(res.data['message']);
+    return const Error('获取验证码配置失败');
   }
 
   Future<void> _initLinuxWebview() async {
