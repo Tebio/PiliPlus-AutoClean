@@ -85,15 +85,16 @@ jobs:
             exit 1
           fi
           apk_name="PiliPlus_AutoClean_android_${version}_arm64-v8a.apk"
+          release_tag="autoclean-${version}"
           cp "${apk_files[0]}" "$apk_name"
           echo "apk_name=$apk_name" >> "$GITHUB_ENV"
-          echo "release_tag=autoclean-${version}" >> "$GITHUB_ENV"
+          echo "release_tag=$release_tag" >> "$GITHUB_ENV"
           jq -n \
-            --arg tag_name "autoclean-${version}" \
+            --arg tag_name "$release_tag" \
             --arg version_name "${version}" \
             --argjson version_code "${version_code}" \
             --arg apk_name "${apk_name}" \
-            --arg download_url "https://github.com/Tebio/PiliPlus-AutoClean/releases/latest/download/${apk_name}" \
+            --arg download_url "https://github.com/Tebio/PiliPlus-AutoClean/releases/download/${release_tag}/${apk_name}" \
             '{
               tag_name: $tag_name,
               version_name: $version_name,
