@@ -14,7 +14,7 @@ class SliderDialog extends StatefulWidget {
   });
 
   final double value;
-  final Widget title;
+  final Object title;
   final double min;
   final double max;
   final int? divisions;
@@ -37,7 +37,7 @@ class _SliderDialogState extends State<SliderDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: widget.title,
+      title: widget.title is Widget ? widget.title as Widget : Text(widget.title.toString()),
       contentPadding: const .only(top: 20, left: 8, right: 8, bottom: 8),
       content: SizedBox(
         height: 40,
@@ -71,3 +71,4 @@ class _SliderDialogState extends State<SliderDialog> {
     );
   }
 }
+
