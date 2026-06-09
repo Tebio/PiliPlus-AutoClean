@@ -30,6 +30,11 @@ jobs:
           git remote add upstream https://github.com/bggRGjQaUbCoE/PiliPlus.git
           git fetch upstream main
 
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "Already up to date with upstream/main."
+            exit 0
+          fi
+
           if ! git merge --no-ff --no-edit upstream/main; then
             echo "Merge conflict detected. Checking whether conflicts are limited to GitHub workflow files."
 
@@ -56,6 +61,13 @@ jobs:
             git add .github/workflows
             git commit --no-edit
           fi
+
+      - name: Remove non-AutoClean workflows
+        run: |
+          find .github/workflows -type f \
+            ! -name 'build.yml' \
+            ! -name 'sync-upstream.yml' \
+            -print -delete
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
