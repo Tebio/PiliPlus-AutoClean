@@ -69,6 +69,15 @@ jobs:
         run: lib/scripts/patch.ps1 android
         continue-on-error: true
 
+      - name: Commit local sync patches
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "Apply AutoClean sync patches"
+          else
+            echo "No local sync patches to commit."
+          fi
+
       - name: Guard AutoClean customizations
         shell: pwsh
         run: lib/scripts/guard_autoclean.ps1
