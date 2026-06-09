@@ -26,15 +26,18 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Merge upstream main
+        id: merge_upstream
         run: |
           git remote add upstream https://github.com/bggRGjQaUbCoE/PiliPlus.git
           git fetch upstream main
 
           if git merge-base --is-ancestor upstream/main HEAD; then
             echo "Already up to date with upstream/main."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
+          echo "changed=true" >> "$GITHUB_OUTPUT"
           if ! git merge --no-ff --no-edit upstream/main; then
             echo "Merge conflict detected. Checking whether conflicts are limited to GitHub workflow files."
 
@@ -63,6 +66,7 @@ jobs:
           fi
 
       - name: Remove non-AutoClean workflows
+        if: steps.merge_upstream.outputs.changed == 'true'
         run: |
           find .github/workflows -type f \
             ! -name 'build.yml' \
@@ -70,6 +74,7 @@ jobs:
             -print -delete
 
       - name: Set up Flutter
+        if: steps.merge_upstream.outputs.changed == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -77,11 +82,13 @@ jobs:
           cache: true
 
       - name: Apply local Flutter patches
+        if: steps.merge_upstream.outputs.changed == 'true'
         shell: pwsh
         run: lib/scripts/patch.ps1 android
         continue-on-error: true
 
       - name: Commit local sync patches
+        if: steps.merge_upstream.outputs.changed == 'true'
         run: |
           if [ -n "$(git status --porcelain)" ]; then
             git add -A
@@ -91,15 +98,19 @@ jobs:
           fi
 
       - name: Guard AutoClean customizations
+        if: steps.merge_upstream.outputs.changed == 'true'
         shell: pwsh
         run: lib/scripts/guard_autoclean.ps1
 
       - name: Flutter pub get
+        if: steps.merge_upstream.outputs.changed == 'true'
         run: flutter pub get
 
       - name: Flutter analyze
+        if: steps.merge_upstream.outputs.changed == 'true'
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Push synced result
+        if: steps.merge_upstream.outputs.changed == 'true'
         run: |
           git push origin HEAD:main
