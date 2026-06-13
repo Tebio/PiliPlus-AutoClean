@@ -40,18 +40,54 @@ jobs:
 
           echo "changed=true" >> "$GITHUB_OUTPUT"
           if ! git merge --no-ff --no-edit upstream/main; then
-            echo "Merge conflict detected. Checking whether conflicts are limited to GitHub workflow files."
+            echo "Merge conflict detected. Trying AutoClean safe conflict rules."
+
+            safe_theirs_files=(
+              ".fvmrc"
+              "pubspec.yaml"
+              "pubspec.lock"
+              "lib/common/widgets/flutter/text_field/editable_text.dart"
+              "lib/pages/common/publish/common_rich_text_pub_page.dart"
+              "lib/http/video.dart"
+              "lib/models/video/play/url.dart"
+              "lib/pages/audio/controller.dart"
+              "lib/pages/audio/view.dart"
+              "lib/plugin/pl_player/controller.dart"
+              "lib/utils/storage_pref.dart"
+            )
+            for file in "${safe_theirs_files[@]}"; do
+              if git ls-files -u -- "$file" | grep -q .; then
+                echo "Taking upstream version for safe non-AutoClean file: $file"
+                git checkout --theirs -- "$file"
+                git add "$file"
+              fi
+            done
+
+            safe_ours_files=(
+              "lib/scripts/patch.ps1"
+              "lib/scripts/autoclean_upstream_hotfix.ps1"
+              ".github/workflows/build.yml"
+              ".github/workflows/sync-upstream.yml"
+            )
+            for file in "${safe_ours_files[@]}"; do
+              if git ls-files -u -- "$file" | grep -q .; then
+                echo "Keeping AutoClean local version for automation file: $file"
+                git checkout --ours -- "$file"
+                git add "$file"
+              fi
+            done
 
             conflicted_files="$(git diff --name-only --diff-filter=U || true)"
             deleted_by_us="$(git diff --name-only --diff-filter=DU || true)"
             all_conflicts="$(printf '%s\n%s\n' "$conflicted_files" "$deleted_by_us" | sed '/^$/d' | sort -u)"
+            echo "Remaining conflicts after AutoClean safe rules:"
             echo "$all_conflicts"
 
             non_workflow_conflicts="$(echo "$all_conflicts" | grep -v '^.github/workflows/' || true)"
             if [ -n "$non_workflow_conflicts" ]; then
-              echo "Non-workflow conflicts found. Manual resolution required:"
+              echo "Non-workflow conflicts still need manual resolution:"
               echo "$non_workflow_conflicts"
-              git status
+              git status --short
               exit 1
             fi
 
