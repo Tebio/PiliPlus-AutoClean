@@ -1,0 +1,9 @@
+diff --git a/lib/pages/video/view.dart b/lib/pages/video/view.dart
+--- a/lib/pages/video/view.dart
++++ b/lib/pages/video/view.dart
+@@ -71,6 +71,7 @@ import 'package:flutter/services.dart' show SystemUiOverlayStyle;
+ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+ import 'package:get/get.dart';
++import 'package:intl/intl.dart' show DateFormat;
+ import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
