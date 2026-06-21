@@ -132,6 +132,23 @@ List<SettingsModel> get playSettings => [
     getSubtitle: () => '当前:「${['常规', '粗体', '等宽'][Pref.fullscreenClockStyle]}」',
     onTap: _showFullscreenClockStyleDialog,
   ),
+  NormalModel(
+    title: '全屏时钟颜色',
+    leading: const Icon(Icons.color_lens_outlined),
+    getSubtitle: () {
+      const names = ['白色', '黄色', '绿色', '青色'];
+      const colors = [0xFFFFFFFF, 0xFFFFFF00, 0xFF00FF00, 0xFF00FFFF];
+      final idx = colors.indexOf(Pref.fullscreenClockColor);
+      return '当前:「${idx >= 0 ? names[idx] : '白色'}」';
+    },
+    onTap: _showFullscreenClockColorDialog,
+  ),
+  NormalModel(
+    title: '全屏时钟位置',
+    leading: const Icon(Icons.location_on_outlined),
+    getSubtitle: () => '当前:「${['左上', '顶部居中', '右上'][Pref.fullscreenClockPosition]}」',
+    onTap: _showFullscreenClockPositionDialog,
+  ),
   const SwitchModel(
     title: '双击快退/快进',
     subtitle: '左侧双击快退/右侧双击快进，关闭则双击均为暂停/播放',
@@ -639,6 +656,56 @@ Future<void> _showFullscreenClockStyleDialog(
   if (res != null) {
     await GStorage.setting.put(
       SettingBoxKey.fullscreenClockStyle,
+      res,
+    );
+    setState();
+  }
+}
+
+Future<void> _showFullscreenClockColorDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<int>(
+    context: context,
+    builder: (context) => SelectDialog<int>(
+      title: '全屏时钟颜色',
+      value: Pref.fullscreenClockColor,
+      values: const [
+        (0xFFFFFFFF, '白色'),
+        (0xFFFFFF00, '黄色'),
+        (0xFF00FF00, '绿色'),
+        (0xFF00FFFF, '青色'),
+      ],
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(
+      res,
+    );
+    setState();
+  }
+}
+
+Future<void> _showFullscreenClockPositionDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<int>(
+    context: context,
+    builder: (context) => SelectDialog<int>(
+      title: '全屏时钟位置',
+      value: Pref.fullscreenClockPosition,
+      values: const [
+        (0, '左上'),
+        (1, '顶部居中'),
+        (2, '右上'),
+      ],
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(
+      SettingBoxKey.fullscreenClockPosition,
       res,
     );
     setState();

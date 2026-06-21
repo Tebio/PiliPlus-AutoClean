@@ -1659,8 +1659,13 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
   Widget _fullscreenClockOverlay() {
     return Positioned(
-      top: padding.top + 8,
-      left: 16,
+      top: padding.top + 12,
+      left: Pref.fullscreenClockPosition == 2
+          ? null
+          : Pref.fullscreenClockPosition == 0
+              ? 20
+              : null,
+      right: Pref.fullscreenClockPosition == 2 ? 20 : null,
       child: IgnorePointer(
         child: StreamBuilder<DateTime>(
           stream: Stream.periodic(
@@ -1672,12 +1677,13 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
             final timeStr = DateFormat('HH:mm:ss').format(now);
             final fontSize = Pref.fullscreenClockFontSize;
             final style = Pref.fullscreenClockStyle;
+            final color = Color(Pref.fullscreenClockColor);
 
             TextStyle textStyle;
             switch (style) {
               case 1:
                 textStyle = TextStyle(
-                  color: Colors.white70,
+                  color: color,
                   fontSize: fontSize,
                   fontWeight: FontWeight.bold,
                   shadows: const [
@@ -1689,7 +1695,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                 );
               case 2:
                 textStyle = TextStyle(
-                  color: Colors.white70,
+                  color: color,
                   fontSize: fontSize,
                   fontFamily: 'monospace',
                   shadows: const [
@@ -1701,7 +1707,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                 );
               default:
                 textStyle = TextStyle(
-                  color: Colors.white70,
+                  color: color,
                   fontSize: fontSize,
                   shadows: const [
                     Shadow(
