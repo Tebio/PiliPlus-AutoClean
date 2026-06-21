@@ -143,6 +143,12 @@ List<SettingsModel> get playSettings => [
     },
     onTap: _showFullscreenClockColorDialog,
   ),
+  NormalModel(
+    title: '全屏时钟位置',
+    leading: const Icon(Icons.location_on_outlined),
+    getSubtitle: () => '当前:「${['左上', '顶部居中', '右上'][Pref.fullscreenClockPosition]}」',
+    onTap: _showFullscreenClockPositionDialog,
+  ),
   const SwitchModel(
     title: '双击快退/快进',
     subtitle: '左侧双击快退/右侧双击快进，关闭则双击均为暂停/播放',
@@ -675,7 +681,31 @@ Future<void> _showFullscreenClockColorDialog(
   );
   if (res != null) {
     await GStorage.setting.put(
-      SettingBoxKey.fullscreenClockColor,
+      res,
+    );
+    setState();
+  }
+}
+
+Future<void> _showFullscreenClockPositionDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<int>(
+    context: context,
+    builder: (context) => SelectDialog<int>(
+      title: '全屏时钟位置',
+      value: Pref.fullscreenClockPosition,
+      values: const [
+        (0, '左上'),
+        (1, '顶部居中'),
+        (2, '右上'),
+      ],
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(
+      SettingBoxKey.fullscreenClockPosition,
       res,
     );
     setState();

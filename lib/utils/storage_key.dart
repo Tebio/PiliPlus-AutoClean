@@ -34,6 +34,7 @@ abstract final class SettingBoxKey {
       fullscreenClockFontSize = 'fullscreenClockFontSize',
       fullscreenClockStyle = 'fullscreenClockStyle',
       fullscreenClockColor = 'fullscreenClockColor',
+      fullscreenClockPosition = 'fullscreenClockPosition',
       playerVolume = 'playerVolume',
       maxVolume = 'maxVolume';
 
