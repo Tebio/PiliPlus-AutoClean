@@ -681,6 +681,7 @@ Future<void> _showFullscreenClockColorDialog(
   );
   if (res != null) {
     await GStorage.setting.put(
+      SettingBoxKey.fullscreenClockColor,
       res,
     );
     setState();
