@@ -1030,6 +1030,21 @@ abstract final class Pref {
     defaultValue: PlatformUtils.isMobile,
   );
 
+  static bool get fullscreenClockEnable => _setting.get(
+    SettingBoxKey.fullscreenClockEnable,
+    defaultValue: true,
+  );
+
+  static double get fullscreenClockFontSize => _setting.get(
+    SettingBoxKey.fullscreenClockFontSize,
+    defaultValue: 18.0,
+  );
+
+  static int get fullscreenClockStyle => _setting.get(
+    SettingBoxKey.fullscreenClockStyle,
+    defaultValue: 0,
+  );
+
   static FollowOrderType get followOrderType =>
       FollowOrderType.values[_setting.get(
         SettingBoxKey.followOrderType,

@@ -114,6 +114,25 @@ List<SettingsModel> get playSettings => [
     defaultVal: PlatformUtils.isMobile,
   ),
   const SwitchModel(
+    title: '全屏显示时钟',
+    subtitle: '全屏时在左上角显示当前时间',
+    leading: Icon(Icons.access_time_outlined),
+    setKey: SettingBoxKey.fullscreenClockEnable,
+    defaultVal: true,
+  ),
+  NormalModel(
+    title: '全屏时钟字号',
+    leading: const Icon(Icons.format_size_outlined),
+    getSubtitle: () => '当前:「${Pref.fullscreenClockFontSize.toStringAsFixed(0)}」',
+    onTap: _showFullscreenClockFontSizeDialog,
+  ),
+  NormalModel(
+    title: '全屏时钟样式',
+    leading: const Icon(Icons.style_outlined),
+    getSubtitle: () => '当前:「${['常规', '粗体', '等宽'][Pref.fullscreenClockStyle]}」',
+    onTap: _showFullscreenClockStyleDialog,
+  ),
+  const SwitchModel(
     title: '双击快退/快进',
     subtitle: '左侧双击快退/右侧双击快进，关闭则双击均为暂停/播放',
     leading: Icon(Icons.touch_app_outlined),
@@ -573,5 +592,55 @@ Future<void> showVolumeDialog(
   );
   if (res != null) {
     onChanged(res);
+  }
+}
+
+Future<void> _showFullscreenClockFontSizeDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<double>(
+    context: context,
+    builder: (context) => SliderDialog(
+      title: const Text('全屏时钟字号'),
+      min: 12.0,
+      max: 48.0,
+      divisions: 36,
+      precise: 0,
+      value: Pref.fullscreenClockFontSize,
+      suffix: 'sp',
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(
+      SettingBoxKey.fullscreenClockFontSize,
+      res,
+    );
+    setState();
+  }
+}
+
+Future<void> _showFullscreenClockStyleDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<int>(
+    context: context,
+    builder: (context) => SelectDialog<int>(
+      title: '全屏时钟样式',
+      value: Pref.fullscreenClockStyle,
+      values: const [
+        (0, '常规'),
+        (1, '粗体'),
+        (2, '等宽'),
+      ],
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(
+      SettingBoxKey.fullscreenClockStyle,
+      res,
+    );
+    setState();
   }
 }
