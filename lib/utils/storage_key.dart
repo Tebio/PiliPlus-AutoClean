@@ -30,6 +30,9 @@ abstract final class SettingBoxKey {
       pgcSkipType = 'pgcSkipType',
       audioPlayMode = 'audioPlayMode',
       showBatteryLevel = 'showBatteryLevel',
+      fullscreenClockEnable = 'fullscreenClockEnable',
+      fullscreenClockFontSize = 'fullscreenClockFontSize',
+      fullscreenClockStyle = 'fullscreenClockStyle',
       playerVolume = 'playerVolume',
       maxVolume = 'maxVolume';
 

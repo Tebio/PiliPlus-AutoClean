@@ -61,6 +61,7 @@ import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -69,6 +70,7 @@ import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 
 class VideoDetailPageV extends StatefulWidget {
@@ -1505,6 +1507,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       children: [
         const Positioned.fill(child: ColoredBox(color: Colors.black)),
 
+        if (isFullScreen && Pref.fullscreenClockEnable)
+          _fullscreenClockOverlay(),
+
         plPlayer(width: width, height: height),
 
         Obx(() {
@@ -1649,6 +1654,67 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           },
         ),
       ],
+    );
+  }
+
+  Widget _fullscreenClockOverlay() {
+    return Positioned(
+      top: padding.top + 8,
+      left: 16,
+      child: IgnorePointer(
+        child: StreamBuilder<DateTime>(
+          stream: Stream.periodic(
+            const Duration(seconds: 1),
+            (_) => DateTime.now(),
+          ),
+          builder: (context, snapshot) {
+            final now = snapshot.data ?? DateTime.now();
+            final timeStr = DateFormat('HH:mm').format(now);
+            final fontSize = Pref.fullscreenClockFontSize;
+            final style = Pref.fullscreenClockStyle;
+
+            TextStyle textStyle;
+            switch (style) {
+              case 1:
+                textStyle = TextStyle(
+                  color: Colors.white70,
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.bold,
+                  shadows: const [
+                    Shadow(
+                      blurRadius: 4,
+                      color: Colors.black54,
+                    ),
+                  ],
+                );
+              case 2:
+                textStyle = TextStyle(
+                  color: Colors.white70,
+                  fontSize: fontSize,
+                  fontFamily: 'monospace',
+                  shadows: const [
+                    Shadow(
+                      blurRadius: 4,
+                      color: Colors.black54,
+                    ),
+                  ],
+                );
+              default:
+                textStyle = TextStyle(
+                  color: Colors.white70,
+                  fontSize: fontSize,
+                  shadows: const [
+                    Shadow(
+                      blurRadius: 4,
+                      color: Colors.black54,
+                    ),
+                  ],
+                );
+            }
+            return Text(timeStr, style: textStyle);
+          },
+        ),
+      ),
     );
   }
 
