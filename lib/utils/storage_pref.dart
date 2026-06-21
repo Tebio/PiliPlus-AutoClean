@@ -1050,9 +1050,14 @@ abstract final class Pref {
     defaultValue: 0xFFFFFFFF,
   );
 
-  static int get fullscreenClockPosition => _setting.get(
-    SettingBoxKey.fullscreenClockPosition,
-    defaultValue: 0,
+  static double get fullscreenClockOffsetX => _setting.get(
+    SettingBoxKey.fullscreenClockOffsetX,
+    defaultValue: 0.0,
+  );
+
+  static double get fullscreenClockOffsetY => _setting.get(
+    SettingBoxKey.fullscreenClockOffsetY,
+    defaultValue: 0.0,
   );
 
   static FollowOrderType get followOrderType =>

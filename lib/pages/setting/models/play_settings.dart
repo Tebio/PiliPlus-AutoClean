@@ -144,10 +144,16 @@ List<SettingsModel> get playSettings => [
     onTap: _showFullscreenClockColorDialog,
   ),
   NormalModel(
-    title: '全屏时钟位置',
-    leading: const Icon(Icons.location_on_outlined),
-    getSubtitle: () => '当前:「${['左上', '顶部居中', '右上'][Pref.fullscreenClockPosition]}」',
-    onTap: _showFullscreenClockPositionDialog,
+    title: '全屏时钟水平偏移',
+    leading: const Icon(Icons.swap_horiz_outlined),
+    getSubtitle: () => '当前:「${Pref.fullscreenClockOffsetX.toStringAsFixed(0)}px」',
+    onTap: _showFullscreenClockOffsetXDialog,
+  ),
+  NormalModel(
+    title: '全屏时钟垂直偏移',
+    leading: const Icon(Icons.swap_vert_outlined),
+    getSubtitle: () => '当前:「${Pref.fullscreenClockOffsetY.toStringAsFixed(0)}px」',
+    onTap: _showFullscreenClockOffsetYDialog,
   ),
   const SwitchModel(
     title: '双击快退/快进',
@@ -688,25 +694,50 @@ Future<void> _showFullscreenClockColorDialog(
   }
 }
 
-Future<void> _showFullscreenClockPositionDialog(
+Future<void> _showFullscreenClockOffsetXDialog(
   BuildContext context,
   VoidCallback setState,
 ) async {
-  final res = await showDialog<int>(
+  final res = await showDialog<double>(
     context: context,
-    builder: (context) => SelectDialog<int>(
-      title: '全屏时钟位置',
-      value: Pref.fullscreenClockPosition,
-      values: const [
-        (0, '左上'),
-        (1, '顶部居中'),
-        (2, '右上'),
-      ],
+    builder: (context) => SliderDialog(
+      title: '全屏时钟水平偏移',
+      min: -100.0,
+      max: 100.0,
+      divisions: 200,
+      precise: 0,
+      value: Pref.fullscreenClockOffsetX,
+      suffix: 'px',
     ),
   );
   if (res != null) {
     await GStorage.setting.put(
-      SettingBoxKey.fullscreenClockPosition,
+      SettingBoxKey.fullscreenClockOffsetX,
+      res,
+    );
+    setState();
+  }
+}
+
+Future<void> _showFullscreenClockOffsetYDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<double>(
+    context: context,
+    builder: (context) => SliderDialog(
+      title: '全屏时钟垂直偏移',
+      min: -100.0,
+      max: 100.0,
+      divisions: 200,
+      precise: 0,
+      value: Pref.fullscreenClockOffsetY,
+      suffix: 'px',
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(
+      SettingBoxKey.fullscreenClockOffsetY,
       res,
     );
     setState();

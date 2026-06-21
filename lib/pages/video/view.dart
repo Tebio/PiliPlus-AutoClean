@@ -1659,13 +1659,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
   Widget _fullscreenClockOverlay() {
     return Positioned(
-      top: padding.top + 12,
-      left: Pref.fullscreenClockPosition == 2
-          ? null
-          : Pref.fullscreenClockPosition == 0
-              ? 20
-              : null,
-      right: Pref.fullscreenClockPosition == 2 ? 20 : null,
+      top: padding.top + 12 + Pref.fullscreenClockOffsetY,
+      left: 20 + Pref.fullscreenClockOffsetX,
       child: IgnorePointer(
         child: StreamBuilder<DateTime>(
           stream: Stream.periodic(
