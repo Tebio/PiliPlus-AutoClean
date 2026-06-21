@@ -1032,7 +1032,7 @@ abstract final class Pref {
 
   static bool get fullscreenClockEnable => _setting.get(
     SettingBoxKey.fullscreenClockEnable,
-    defaultValue: false,
+    defaultValue: true,
   );
 
   static double get fullscreenClockFontSize => _setting.get(

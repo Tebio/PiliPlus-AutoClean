@@ -118,7 +118,7 @@ List<SettingsModel> get playSettings => [
     subtitle: '全屏时在左上角显示当前时间',
     leading: Icon(Icons.access_time_outlined),
     setKey: SettingBoxKey.fullscreenClockEnable,
-    defaultVal: false,
+    defaultVal: true,
   ),
   NormalModel(
     title: '全屏时钟字号',

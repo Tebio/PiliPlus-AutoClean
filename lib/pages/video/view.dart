@@ -1507,10 +1507,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       children: [
         const Positioned.fill(child: ColoredBox(color: Colors.black)),
 
+        plPlayer(width: width, height: height),
+
         if (isFullScreen && Pref.fullscreenClockEnable)
           _fullscreenClockOverlay(),
-
-        plPlayer(width: width, height: height),
 
         Obx(() {
           if (!videoDetailController.autoPlay) {
@@ -1669,7 +1669,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           ),
           builder: (context, snapshot) {
             final now = snapshot.data ?? DateTime.now();
-            final timeStr = DateFormat('HH:mm').format(now);
+            final timeStr = DateFormat('HH:mm:ss').format(now);
             final fontSize = Pref.fullscreenClockFontSize;
             final style = Pref.fullscreenClockStyle;
 
