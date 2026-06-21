@@ -1045,6 +1045,11 @@ abstract final class Pref {
     defaultValue: 0,
   );
 
+  static int get fullscreenClockColor => _setting.get(
+    SettingBoxKey.fullscreenClockColor,
+    defaultValue: 0xFFFFFFFF,
+  );
+
   static FollowOrderType get followOrderType =>
       FollowOrderType.values[_setting.get(
         SettingBoxKey.followOrderType,
