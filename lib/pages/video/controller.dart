@@ -1468,6 +1468,7 @@ class VideoDetailController extends GetxController
       }
       SmartDialog.showToast('稍后再看自动清理失败');
     });
+  }
 
   Future<void> _setSubtitle(List<Subtitle> sub) async {
     subtitles.value = sub;
