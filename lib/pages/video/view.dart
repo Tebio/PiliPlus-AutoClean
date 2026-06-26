@@ -235,7 +235,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
     if (status.isCompleted) {
       videoDetailController.markWatchLaterAutoRemoveIfNeeded(
-        videoDetailController.plPlayerController.position,
+        Duration(seconds: videoDetailController.plPlayerController.position.value),
       );
       try {
         if (videoDetailController
