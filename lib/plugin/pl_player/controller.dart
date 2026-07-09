@@ -356,7 +356,10 @@ class PlPlayerController with BlockConfigMixin {
   late int? cacheVideoQa = PlatformUtils.isMobile ? null : Pref.defaultVideoQa;
   late int cacheAudioQa = Pref.defaultAudioQa;
   bool enableHeart = true;
-  String? hwdec = Pref.enableHA ? Pref.hardwareDecoding : null;
+  late final String? hwdec = Pref.enableHA ? Pref.hardwareDecoding : null;
+
+  // Track whether soft decode fallback has already been tried for this session
+  bool _softDecodeTried = false;
 
   late final progressType = Pref.btmProgressBehavior;
   late final enableQuickDouble = Pref.enableQuickDouble;
@@ -1025,13 +1028,10 @@ class PlPlayerController with BlockConfigMixin {
             },
           );
         } else if (event.startsWith('Could not open codec')) {
-          if (hwdec != 'no') {
-            // 静默降级到软解 — 华为/鸿蒙设备 hardcodec 不兼容常见
-            hwdec = 'no';
-            refreshPlayer();
-          } else {
-            // 软解也失败,才报错
-            SmartDialog.showToast('软解也失败: $event');
+          // mpv 内部会自动回退其他解码器,不干预.
+          // 仅首次记录,避免重复 toast 扰民 (华为/鸿蒙设备常见).
+          if (!_softDecodeTried) {
+            _softDecodeTried = true;
           }
         } else if (!onlyPlayAudio.value) {
           if (event.startsWith("error running") ||
