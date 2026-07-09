@@ -175,6 +175,15 @@ jobs:
           name: Windows_setup_x64
           path: dist/**/*.exe
 
+      - name: Create/Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: autoclean-${{ env.version }}
+          name: PiliPlus AutoClean ${{ env.version }}
+          make_latest: true
+          files: |
+            dist/**/*.exe
+
       - name: Report build failure
         if: ${{ failure() }}
         uses: actions/github-script@v7
