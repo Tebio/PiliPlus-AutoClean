@@ -1,6 +1,4 @@
 import 'package:PiliPlus/http/user.dart';
-import 'package:PiliPlus/models_new/later/list.dart' show LaterData;
-import 'package:PiliPlus/http/loading_state.dart' show LoadingState;
 import 'package:flutter/material.dart';
 
 /// 全局缓存 — 本次应用生命周期内已添加的稍后再看视频ID
