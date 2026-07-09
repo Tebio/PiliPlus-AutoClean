@@ -1025,10 +1025,13 @@ class PlPlayerController with BlockConfigMixin {
             },
           );
         } else if (event.startsWith('Could not open codec')) {
-          SmartDialog.showToast('无法加载解码器, $event，尝试切换至软解');
           if (hwdec != 'no') {
+            // 静默降级到软解 — 华为/鸿蒙设备 hardcodec 不兼容常见
             hwdec = 'no';
             refreshPlayer();
+          } else {
+            // 软解也失败,才报错
+            SmartDialog.showToast('软解也失败: $event');
           }
         } else if (!onlyPlayAudio.value) {
           if (event.startsWith("error running") ||
