@@ -126,6 +126,55 @@ jobs:
           name: Android_arm64-v8a
           path: ${{ env.apk_name }}
 
+  windows:
+    name: Build Windows x64
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+
+      - name: Apply patches
+        shell: pwsh
+        run: lib/scripts/patch.ps1 windows
+
+      - name: Set version
+        shell: pwsh
+        run: lib/scripts/build.ps1
+
+      - name: Install fastforge + Inno Setup
+        run: |
+          dart pub global activate fastforge
+          choco install innosetup --no-progress
+
+      - name: Add Chinese language for Inno Setup
+        shell: pwsh
+        run: |
+          Copy-Item "windows/packaging/exe/ChineseSimplified.isl" "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl" -ErrorAction SilentlyContinue
+
+      - name: Build Windows
+        run: |
+          fastforge package --platform windows --targets exe --flutter-build-args="dart-define-from-file=pili_release.json"
+
+      - name: Upload portable zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows_portable_x64
+          path: build/windows/x64/runner/Release/
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows_setup_x64
+          path: dist/**/*.exe
+
       - name: Report build failure
         if: ${{ failure() }}
         uses: actions/github-script@v7

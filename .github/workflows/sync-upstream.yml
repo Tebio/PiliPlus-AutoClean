@@ -67,6 +67,7 @@ jobs:
               "lib/scripts/autoclean_upstream_hotfix.ps1"
               ".github/workflows/build.yml"
               ".github/workflows/sync-upstream.yml"
+              ".github/workflows/win_x64.yml"
             )
             for file in "${safe_ours_files[@]}"; do
               if git ls-files -u -- "$file" | grep -q .; then
@@ -91,12 +92,11 @@ jobs:
             fi
 
             echo "Keeping local AutoClean workflow customizations."
-            git checkout --ours .github/workflows/build.yml .github/workflows/sync-upstream.yml || true
+            git checkout --ours .github/workflows/build.yml .github/workflows/sync-upstream.yml .github/workflows/win_x64.yml || true
             git rm -f \
               .github/workflows/ios.yml \
               .github/workflows/linux_x64.yml \
-              .github/workflows/mac.yml \
-              .github/workflows/win_x64.yml || true
+              .github/workflows/mac.yml || true
             git add .github/workflows
             git commit --no-edit
           fi
