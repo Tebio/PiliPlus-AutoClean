@@ -17,6 +17,10 @@ $BottomSheetAndroidPatch = "lib/scripts/bottom_sheet_android.patch"
 $BottomSheetIOSFlutterPatch = "lib/scripts/bottom_sheet_ios_flutter.patch"
 $BottomSheetIOSPiliPlusPatch = "lib/scripts/bottom_sheet_ios_piliplus.patch"
 
+# TODO: remove
+# https://github.com/flutter/flutter/issues/185052
+$TextSelectionMenuFix = "beb2ad17004a1b118ff2bd09f55cee23198f6652";
+
 # https://github.com/bggRGjQaUbCoE/PiliPlus/issues/1662
 $ScrollViewPatch = "lib/scripts/scroll_view.patch"
 
@@ -39,6 +43,10 @@ $PopupMenuPatch = "lib/scripts/popup_menu.patch"
 $FABPatch = "lib/scripts/fab.patch"
 
 $SelectableRegionSelectionPatch = "lib/scripts/selectable_region.patch"
+
+$EditableTextPatch = "lib/scripts/editable_text.patch"
+
+$TextFieldPatch = "lib/scripts/text_field.patch"
 
 # TODO: remove
 # https://github.com/flutter/flutter/pull/183261
@@ -67,11 +75,12 @@ if ($platform.ToLower() -eq "ios") {
 
 Set-Location $env:FLUTTER_ROOT
 
-$picks   = @()
+$picks   = @($TextSelectionMenuFix)
 $reverts = @()
 $patches = @($ModalBarrierPatch, $TextSelectionPatch, $MouseCursorPatch,
             $ImageAnimPatch, $LayoutBuilderPatch, $NavigationDrawerPatch,
-            $PopupMenuPatch, $FABPatch, $SelectableRegionPatch, $SelectableRegionSelectionPatch)
+            $PopupMenuPatch, $FABPatch, $SelectableRegionPatch, $SelectableRegionSelectionPatch,
+            $EditableTextPatch, $TextFieldPatch)
 
 switch ($platform.ToLower()) {
     "android" {
