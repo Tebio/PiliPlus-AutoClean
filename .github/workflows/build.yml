@@ -78,6 +78,7 @@ jobs:
         run: flutter build apk --release --target-platform android-arm64 --dart-define-from-file=pili_release.json
 
       - name: Normalize APK name
+        id: version
         shell: bash
         run: |
           shopt -s nullglob
@@ -192,6 +193,14 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const repoInfo = await github.rest.repos.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            if (!repoInfo.data.has_issues) {
+              console.log('Issues disabled in this repository — skipping failure report.');
+              return;
+            }
             const title = '[Build Failure] AutoClean';
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const body = [
