@@ -224,6 +224,7 @@ abstract final class PageUtils {
   static Future<void> pushDynDetail(
     DynamicItemModel item, {
     bool isPush = false,
+    bool viewComment = false,
   }) async {
     feedBack();
 
@@ -245,6 +246,7 @@ abstract final class PageUtils {
           '/dynamicDetail',
           arguments: {
             'item': item,
+            if (viewComment) 'viewComment': true,
           },
         );
       }
@@ -409,25 +411,6 @@ abstract final class PageUtils {
         push();
         break;
     }
-  }
-
-  static void onHorizontalPreviewState(
-    ScaffoldState state,
-    List<SourceModel> imgList,
-    int index,
-  ) {
-    state.showBottomSheet(
-      constraints: const BoxConstraints(),
-      (context) => GalleryViewer(
-        sources: imgList,
-        initIndex: index,
-        quality: GlobalData().imgQuality,
-      ),
-      enableDrag: false,
-      elevation: 0.0,
-      backgroundColor: Colors.transparent,
-      sheetAnimationStyle: AnimationStyle.noAnimation,
-    );
   }
 
   static void inAppWebview(
@@ -622,6 +605,7 @@ abstract final class PageUtils {
           seasonId: isSeason ? id : null,
           epId: isSeason ? null : id,
           aid: aid,
+          progress: progress,
           off: off,
         );
       }
@@ -750,6 +734,7 @@ abstract final class PageUtils {
     dynamic seasonId,
     dynamic epId,
     int? aid,
+    int? progress, // milliseconds
     bool off = false,
   }) async {
     try {
@@ -775,6 +760,7 @@ abstract final class PageUtils {
             seasonId: response.seasonId,
             epId: episode.id,
             cover: episode.cover,
+            progress: progress,
             extraArguments: {
               'pgcItem': response,
             },

@@ -5,6 +5,7 @@ import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
+import 'package:PiliPlus/common/widgets/sliver/trending_header.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/search/search_trending/list.dart';
 import 'package:PiliPlus/pages/search_trending/controller.dart';
@@ -15,7 +16,6 @@ import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide ListTile;
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:get/get.dart';
@@ -34,28 +34,6 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
   final RxDouble _scrollRatio = 0.0.obs;
 
   @override
-  void initState() {
-    super.initState();
-    _controller.scrollController.addListener(listener);
-  }
-
-  @override
-  void dispose() {
-    _controller.scrollController.removeListener(listener);
-    super.dispose();
-  }
-
-  void listener() {
-    if (_controller.scrollController.hasClients) {
-      _scrollRatio.value = clampDouble(
-        _controller.scrollController.position.pixels / _offset,
-        0.0,
-        1.0,
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final padding = MediaQuery.viewPaddingOf(context);
@@ -64,84 +42,85 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
     final width = size.isPortrait ? maxWidth : min(640.0, maxWidth * 0.6);
     final height = width * 528 / 1125;
     _offset = height - 56 - padding.top;
-    listener();
-    return Scaffold(
-      extendBody: true,
-      extendBodyBehindAppBar: true,
-      resizeToAvoidBottomInset: false,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(56),
-        child: Obx(
-          () {
-            final scrollRatio = _scrollRatio.value;
-            final flag = maxWidth > width || scrollRatio >= 0.5;
-            return AppBar(
-              title: Opacity(
-                opacity: scrollRatio,
-                child: Text(
-                  'bilibili热搜',
-                  style: TextStyle(
-                    color: flag ? null : Colors.white,
+    return Material(
+      child: Stack(
+        children: [
+          Padding(
+            padding: .only(left: padding.left, right: padding.right),
+            child: Center(
+              child: SizedBox(
+                width: width,
+                child: refreshIndicator(
+                  onRefresh: _controller.onRefresh,
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      TrendingHeader(
+                        offset: _offset,
+                        onScrollRatioChanged: _scrollRatio.call,
+                        child: Image.asset(
+                          width: width,
+                          height: height,
+                          cacheWidth: width.cacheSize(context),
+                          Assets.trendingBanner,
+                          filterQuality: .low,
+                        ),
+                      ),
+                      SliverPadding(
+                        padding: .only(bottom: padding.bottom + 100),
+                        sliver: Obx(
+                          () =>
+                              _buildBody(theme, _controller.loadingState.value),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              backgroundColor: theme.colorScheme.surface.withValues(
-                alpha: scrollRatio,
-              ),
-              foregroundColor: flag ? null : Colors.white,
-              systemOverlayStyle: flag
-                  ? null
-                  : const SystemUiOverlayStyle(
-                      statusBarBrightness: Brightness.dark,
-                      statusBarIconBrightness: Brightness.light,
-                    ),
-              shape: scrollRatio == 1
-                  ? Border(
-                      bottom: BorderSide(
-                        color: theme.colorScheme.outline.withValues(
-                          alpha: 0.1,
-                        ),
-                      ),
-                    )
-                  : null,
-            );
-          },
-        ),
-      ),
-      body: Padding(
-        padding: EdgeInsets.only(
-          left: padding.left,
-          right: padding.right,
-        ),
-        child: Center(
-          child: SizedBox(
-            width: width,
-            child: refreshIndicator(
-              onRefresh: _controller.onRefresh,
-              child: CustomScrollView(
-                controller: _controller.scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Image.asset(
-                      width: width,
-                      height: height,
-                      cacheWidth: width.cacheSize(context),
-                      Assets.trendingBanner,
-                      filterQuality: FilterQuality.low,
-                    ),
-                  ),
-                  SliverPadding(
-                    padding: EdgeInsets.only(bottom: padding.bottom + 100),
-                    sliver: Obx(
-                      () => _buildBody(theme, _controller.loadingState.value),
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
-        ),
+          Positioned(
+            left: 0,
+            top: 0,
+            right: 0,
+            child: Obx(
+              () {
+                final scrollRatio = _scrollRatio.value;
+                final flag = maxWidth > width || scrollRatio >= 0.5;
+                return AppBar(
+                  title: Opacity(
+                    opacity: scrollRatio,
+                    child: Text(
+                      'bilibili热搜',
+                      style: TextStyle(
+                        color: flag ? null : Colors.white,
+                      ),
+                    ),
+                  ),
+                  backgroundColor: theme.colorScheme.surface.withValues(
+                    alpha: scrollRatio,
+                  ),
+                  foregroundColor: flag ? null : Colors.white,
+                  systemOverlayStyle: flag
+                      ? null
+                      : const SystemUiOverlayStyle(
+                          statusBarBrightness: Brightness.dark,
+                          statusBarIconBrightness: Brightness.light,
+                        ),
+                  shape: scrollRatio == 1
+                      ? Border(
+                          bottom: BorderSide(
+                            color: theme.colorScheme.outline.withValues(
+                              alpha: 0.1,
+                            ),
+                          ),
+                        )
+                      : null,
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -180,7 +159,7 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
                         : Text(
                             '${index + 1 - _controller.topCount}',
                             style: TextStyle(
-                              fontWeight: FontWeight.bold,
+                              fontWeight: .bold,
                               color: ColourUtils.index2Color(
                                 index - _controller.topCount,
                                 theme.colorScheme.outline,
@@ -195,7 +174,7 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
                           child: Text(
                             item.keyword!,
                             maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            overflow: .ellipsis,
                             strutStyle: const StrutStyle(height: 1, leading: 0),
                             style: const TextStyle(height: 1, fontSize: 15),
                           ),

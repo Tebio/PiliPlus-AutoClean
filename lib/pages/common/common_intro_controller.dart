@@ -159,7 +159,7 @@ abstract class CommonIntroController extends GetxController
     final res = await (hasLater.value
         ? UserHttp.toViewDel(aids: IdUtils.bv2av(bvid).toString())
         : UserHttp.toViewLater(bvid: bvid));
-    if (res.isSuccess) hasLater.value = !hasLater.value;
+    if (res.isSuccess) hasLater.toggle();
   }
 
   String get watchLaterAutoRemoveExcludeKey {
@@ -270,7 +270,7 @@ mixin FavMixin on TripleMixin {
           SmartDialog.dismiss();
           if (result.isSuccess) {
             updateFavCount(hasFav ? -1 : 1);
-            this.hasFav.value = !hasFav;
+            this.hasFav.toggle();
             SmartDialog.showToast('${hasFav ? '取消' : ''}收藏成功');
           } else {
             res.toast();
