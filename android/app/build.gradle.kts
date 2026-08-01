@@ -19,7 +19,7 @@ if (!isBuiltInKotlinEnabled) {
 
 android {
     namespace = "com.tebio.piliplus.autoclean"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
