@@ -363,6 +363,9 @@ class PlPlayerController with BlockConfigMixin {
   bool enableHeart = true;
   late final String? hwdec = Pref.enableHA ? Pref.hardwareDecoding : null;
 
+  // Track whether soft decode fallback has already been tried for this session
+  bool _softDecodeTried = false;
+
   late final progressType = Pref.btmProgressBehavior;
   late final enableQuickDouble = Pref.enableQuickDouble;
   late final fullScreenGestureReverse = Pref.fullScreenGestureReverse;
@@ -1037,7 +1040,11 @@ class PlPlayerController with BlockConfigMixin {
             },
           );
         } else if (event.startsWith('Could not open codec')) {
-          SmartDialog.showToast('无法加载解码器, $event，可能会切换至软解');
+          // mpv 内部会自动回退其他解码器,不干预.
+          // 仅首次记录,避免重复 toast 扰民 (华为/鸿蒙设备常见).
+          if (!_softDecodeTried) {
+            _softDecodeTried = true;
+          }
         } else if (!onlyPlayAudio.value) {
           if (event.startsWith("error running") ||
               event.startsWith("Failed to open .") ||

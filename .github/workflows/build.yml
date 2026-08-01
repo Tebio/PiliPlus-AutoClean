@@ -1,4 +1,4 @@
-name: Build AutoClean Android
+name: Build AutoClean
 
 on:
   push:
@@ -16,7 +16,8 @@ jobs:
   android:
     name: Build arm64-v8a release APK
     runs-on: ubuntu-latest
-
+    outputs:
+      release_tag: ${{ steps.version.outputs.release_tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -59,6 +60,7 @@ jobs:
           fi
 
       - name: Set AutoClean version
+        id: version
         shell: pwsh
         run: lib/scripts/build.ps1 android
 
@@ -84,11 +86,12 @@ jobs:
             echo "No APK produced" >&2
             exit 1
           fi
-          apk_name="PiliPlus_AutoClean_android_${version}_arm64-v8a.apk"
-          release_tag="autoclean-${version}"
+          apk_name="PiliPlus_autoclean_android_${version}_arm64-v8a.apk"
+          release_tag="${version}"
           cp "${apk_files[0]}" "$apk_name"
           echo "apk_name=$apk_name" >> "$GITHUB_ENV"
           echo "release_tag=$release_tag" >> "$GITHUB_ENV"
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
           jq -n \
             --arg tag_name "$release_tag" \
             --arg version_name "${version}" \
@@ -113,7 +116,7 @@ jobs:
           name: PiliPlus AutoClean ${{ env.version }}
           make_latest: true
           body: |
-            AutoClean Android arm64-v8a build.
+            AutoClean arm64-v8a Android + Windows x64 installer.
 
             Upstream version is recorded in pubspec.yaml and versionName.
           files: |
@@ -126,15 +129,73 @@ jobs:
           name: Android_arm64-v8a
           path: ${{ env.apk_name }}
 
+  windows:
+    name: Build Windows x64
+    needs: android
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+
+      - name: Apply patches
+        shell: pwsh
+        run: lib/scripts/patch.ps1 windows
+
+      - name: Set version
+        shell: pwsh
+        run: lib/scripts/build.ps1
+
+      - name: Install fastforge + Inno Setup
+        run: |
+          dart pub global activate fastforge
+          choco install innosetup --no-progress
+
+      - name: Add Chinese language for Inno Setup
+        shell: pwsh
+        run: |
+          Copy-Item "windows/packaging/exe/ChineseSimplified.isl" "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl" -ErrorAction SilentlyContinue
+
+      - name: Build Windows
+        run: |
+          fastforge package --platform windows --targets exe --flutter-build-args="dart-define-from-file=pili_release.json"
+
+      - name: Upload portable zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows_portable_x64
+          path: build/windows/x64/runner/Release/
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows_setup_x64
+          path: dist/**/*.exe
+
+      - name: Add Windows exe to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.android.outputs.release_tag }}
+          make_latest: false
+          files: |
+            dist/**/*.exe
+
       - name: Report build failure
         if: ${{ failure() }}
         uses: actions/github-script@v7
         with:
           script: |
-            const title = '[Build Failure] AutoClean Android';
+            const title = '[Build Failure] AutoClean';
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const body = [
-              'AutoClean Android 构建失败。',
+              'AutoClean 构建失败。',
               '',
               `- Workflow: ${context.workflow}`,
               `- Run: [#${context.runNumber}](${runUrl})`,

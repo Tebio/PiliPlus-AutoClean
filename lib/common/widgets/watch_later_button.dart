@@ -1,6 +1,9 @@
 import 'package:PiliPlus/http/user.dart';
 import 'package:flutter/material.dart';
 
+/// 全局缓存 — 本次应用生命周期内已添加的稍后再看视频ID
+Set<String> _addedBvids = {};
+
 class WatchLaterButton extends StatefulWidget {
   final String? bvid;
   final int? aid;
@@ -19,7 +22,14 @@ class WatchLaterButton extends StatefulWidget {
 
 class _WatchLaterButtonState extends State<WatchLaterButton> {
   bool _isLoading = false;
-  bool _isAdded = false;
+  late bool _isAdded;
+
+  @override
+  void initState() {
+    super.initState();
+    // 先检查全局缓存(本次会话内已添加的)
+    _isAdded = widget.bvid != null && _addedBvids.contains(widget.bvid);
+  }
 
   Future<void> _addToWatchLater() async {
     if (_isLoading || _isAdded) {
@@ -36,6 +46,9 @@ class _WatchLaterButtonState extends State<WatchLaterButton> {
     setState(() {
       _isLoading = false;
       _isAdded = result.isSuccess;
+      if (result.isSuccess && widget.bvid != null) {
+        _addedBvids.add(widget.bvid!);
+      }
     });
   }
 

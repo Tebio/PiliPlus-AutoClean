@@ -70,9 +70,9 @@ mixin BaseLaterController
               Get.back();
               final res = await UserHttp.toViewDel(aids: aid.toString());
               if (res.isSuccess) {
-                loadingState
-                  ..value.data!.removeAt(index)
-                  ..refresh();
+                // 移除后只移除本地数据，不调用refresh()重新拉取
+                // 否则服务器未同步时刚删除的视频又出现
+                loadingState.value.data!.removeAt(index);
                 updateCount?.call(1);
               }
             },
