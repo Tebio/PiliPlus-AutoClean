@@ -34,25 +34,24 @@ jobs:
             android/*.gradle*
             android/**/gradle-wrapper.properties
 
-      - name: Install Flutter 3.47.2 (official manifest archive)
-        # 2026-09-07: 弃用 flutter-action——它投递的 "3.47.2" 内置 Dart 3.12.1，
-        # 与官方 releases manifest 声明的 3.47.2=Dart 3.13.2 不符（错配包），
-        # 导致 flutter 工具自举时 dwds>=27.1.2 解不开。改为官方 manifest 直链+sha256 校验。
+      - name: Install Flutter 3.47.2 (git clone @ tag, patch-ready)
+        # 2026-09-07: patch.ps1 要在 Flutter 框架源码里 cherry-pick hotfix commit +
+        # git apply ~20 个 .patch，所以 FLUTTER_ROOT 必须是 flutter/flutter 的 git 仓库。
+        # ① flutter-action 投错包（Dart 3.12.1≠官方 3.47.2 标配 3.13.2）②官方 tar.xz
+        # 无 .git 让 cherry-pick 哑火——两条路都死过，改为自己 clone 精确 tag。
         run: |
           set -e
-          MANIFEST=$(curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json)
-          BASE=$(echo "$MANIFEST" | jq -r '.base_url')
-          REL=$(echo "$MANIFEST" | jq -r '.releases[] | select(.version=="3.47.2" and .channel=="stable")')
-          ARCHIVE=$(echo "$REL" | jq -r '.archive')
-          SHA=$(echo "$REL" | jq -r '.sha256')
-          curl -fsSL "$BASE/$ARCHIVE" -o /tmp/flutter.tar.xz
-          echo "$SHA  /tmp/flutter.tar.xz" | sha256sum -c -
-          mkdir -p /tmp/flutter-sdk
-          tar -xJf /tmp/flutter.tar.xz -C /tmp/flutter-sdk
-          echo "/tmp/flutter-sdk/flutter/bin" >> "$GITHUB_PATH"
-          # 注意：$GITHUB_PATH 只对后续 step 生效，本 step 内必须用全路径验证
-          /tmp/flutter-sdk/flutter/bin/flutter --version
-          /tmp/flutter-sdk/flutter/bin/dart --version
+          git clone --depth 1 --branch 3.47.2 https://github.com/flutter/flutter.git /tmp/flutter-sdk
+          cd /tmp/flutter-sdk
+          # patch.ps1 $picks 需要的框架 hotfix commit（浅克隆不含，按需补抓）
+          git fetch --depth 1 origin beb2ad17004a1b118ff2bd09f55cee23198f6652
+          git config --global --add safe.directory /tmp/flutter-sdk
+          echo "/tmp/flutter-sdk/bin" >> "$GITHUB_PATH"
+          # patch.ps1 依赖这个环境变量定位框架源码（flutter-action 原本会设置）
+          echo "FLUTTER_ROOT=/tmp/flutter-sdk" >> "$GITHUB_ENV"
+          # 工具自举 + 版本自证（官方 3.47.2 = Dart 3.13.2）
+          /tmp/flutter-sdk/bin/flutter --version
+          /tmp/flutter-sdk/bin/dart --version
 
       - name: Apply local Flutter patches
         shell: pwsh
