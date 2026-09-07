@@ -34,15 +34,24 @@ jobs:
             android/*.gradle*
             android/**/gradle-wrapper.properties
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: 3.47.2
-          # 2026-09-07: 关掉缓存——缓存里旧版(3.47.1)工具快照混进新 SDK 会触发
-          # flutter tool 自举 pub upgrade，撞上 pub.dev 新版 dwds 的 SDK 下限直接炸。
-          # 干净 SDK 自带预编译工具快照，不需要自举。
-          cache: false
+      - name: Install Flutter 3.47.2 (official manifest archive)
+        # 2026-09-07: 弃用 flutter-action——它投递的 "3.47.2" 内置 Dart 3.12.1，
+        # 与官方 releases manifest 声明的 3.47.2=Dart 3.13.2 不符（错配包），
+        # 导致 flutter 工具自举时 dwds>=27.1.2 解不开。改为官方 manifest 直链+sha256 校验。
+        run: |
+          set -e
+          MANIFEST=$(curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json)
+          BASE=$(echo "$MANIFEST" | jq -r '.base_url')
+          REL=$(echo "$MANIFEST" | jq -r '.releases[] | select(.version=="3.47.2" and .channel=="stable")')
+          ARCHIVE=$(echo "$REL" | jq -r '.archive')
+          SHA=$(echo "$REL" | jq -r '.sha256')
+          curl -fsSL "$BASE/$ARCHIVE" -o /tmp/flutter.tar.xz
+          echo "$SHA  /tmp/flutter.tar.xz" | sha256sum -c -
+          mkdir -p /tmp/flutter-sdk
+          tar -xJf /tmp/flutter.tar.xz -C /tmp/flutter-sdk
+          echo "/tmp/flutter-sdk/flutter/bin" >> "$GITHUB_PATH"
+          flutter --version
+          dart --version
 
       - name: Apply local Flutter patches
         shell: pwsh
