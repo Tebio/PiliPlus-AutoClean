@@ -1,5 +1,6 @@
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/http/loading_state.dart';
+import 'package:PiliPlus/autoclean/watch_later_cleaner.dart';
 import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/models/common/later_view_type.dart';
 import 'package:PiliPlus/models/common/video/source_type.dart';
@@ -115,7 +116,7 @@ class LaterController extends MultiSelectController<LaterData, LaterItemModel>
     }
 
     final watchedAids = result.response.list
-        ?.where(_shouldAutoRemoveViewedItem)
+        ?.where(WatchLaterCleaner.shouldAutoRemoveViewedItem)
         .map((item) => item.aid!)
         .toList();
     if (watchedAids == null || watchedAids.isEmpty) {
@@ -138,42 +139,7 @@ class LaterController extends MultiSelectController<LaterData, LaterItemModel>
     return result;
   }
 
-  bool _shouldAutoRemoveViewedItem(LaterItemModel item) {
-    if (item.progress != -1 || item.aid == null) {
-      return false;
-    }
-
-    final key = item.bvid?.isNotEmpty == true
-        ? item.bvid!
-        : item.aid.toString();
-    if (Pref.autoRemoveWatchedLaterExcludes.contains(key)) {
-      return false;
-    }
-
-    final title = item.title?.toLowerCase() ?? '';
-    final keywords = Pref.autoRemoveWatchedLaterTitleKeywords
-        .split(RegExp(r'[\n|]+'))
-        .map((item) => item.trim().toLowerCase())
-        .where((item) => item.isNotEmpty);
-    if (keywords.any(title.contains)) {
-      return false;
-    }
-
-    final upMids = Pref.autoRemoveWatchedLaterUpMids;
-    if (item.owner?.mid case final int upMid when upMids.contains(upMid)) {
-      return false;
-    }
-
-    final minDuration = Pref.autoRemoveWatchedLaterMinDuration;
-    if (minDuration > 0 &&
-        item.duration != null &&
-        item.duration! >= minDuration) {
-      return false;
-    }
-
-    return true;
-  }
-
+// AutoClean：已看完条目判定已外挂到 lib/autoclean/watch_later_cleaner.dart
   @override
   void onInit() {
     super.onInit();

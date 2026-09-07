@@ -12,6 +12,7 @@ import 'package:PiliPlus/grpc/dm.dart';
 import 'package:PiliPlus/http/fav.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/http/loading_state.dart';
+import 'package:PiliPlus/autoclean/watch_later_cleaner.dart';
 import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/http/video.dart';
 import 'package:PiliPlus/models/common/account_type.dart';
@@ -166,8 +167,9 @@ class VideoDetailController extends GetxController
   late final RxInt seasonIndex = 0.obs;
 
   PlayerStatus? playerStatus;
-  _PendingWatchLaterRemoval? _pendingWatchLaterRemoval;
-  final Set<String> _removedWatchLaterKeys = <String>{};
+  // ── AutoClean 外挂 hook：实现在 lib/autoclean/watch_later_cleaner.dart ──
+  // 委托保持公开方法名不变（view/pgc/ugc/common_intro 调用点零改动）。
+  late final WatchLaterCleaner watchLaterCleaner = WatchLaterCleaner(this);
 
   late final scrollKey = GlobalKey<ExtendedNestedScrollViewState>();
   late final RxBool isVertical;
@@ -383,7 +385,7 @@ class VideoDetailController extends GetxController
       _mediaDesc = args['desc'];
       getMediaList();
     }
-    _removeStoredWatchLaterPendingOnOpen();
+    watchLaterCleaner.removeStoredPendingOnOpen();
 
     tabCtr = TabController(
       length: 2,
@@ -1182,276 +1184,18 @@ class VideoDetailController extends GetxController
     }
   }
 
-  String _watchLaterRemovalKey(int aid, String bvid) =>
-      bvid.isNotEmpty ? bvid : aid.toString();
+  // ── AutoClean 外挂委托（实现在 lib/autoclean/watch_later_cleaner.dart）──
+  // 保持方法名不变：外部调用点（view/pgc/ugc/common_intro）零改动，
+  // 上游 merge 只可能在这几行附近冲突，不再面对 270 行内嵌实现。
 
-  double get _watchLaterAutoRemoveThreshold =>
-      Pref.autoRemoveWatchedLaterThreshold / 100;
+  void markWatchLaterAutoRemoveIfNeeded(Duration position) =>
+      watchLaterCleaner.markAutoRemoveIfNeeded(position);
 
-  List<String> get _storedWatchLaterPending => List<String>.from(
-    setting.get(
-      SettingBoxKey.autoRemoveWatchedLaterPending,
-      defaultValue: const <String>[],
-    ),
-  );
+  void clearPendingWatchLaterAutoRemove(String key) =>
+      watchLaterCleaner.clearPending(key);
 
-  String _pendingField(String? value) =>
-      (value ?? '').replaceAll(RegExp(r'[\t\r\n]+'), ' ');
-
-  String _encodeWatchLaterPending(_PendingWatchLaterRemoval pending) => [
-    pending.aid.toString(),
-    _pendingField(pending.bvid),
-    _pendingField(pending.key),
-    _pendingField(pending.title),
-    pending.upMid?.toString() ?? '',
-    pending.durationMs?.toString() ?? '',
-    'completed',
-  ].join('\t');
-
-  _PendingWatchLaterRemoval? _decodeWatchLaterPending(String value) {
-    final parts = value.split('\t');
-    if (parts.length < 7 || parts[6] != 'completed') {
-      return null;
-    }
-    final aid = int.tryParse(parts[0]);
-    if (aid == null) {
-      return null;
-    }
-    return _PendingWatchLaterRemoval(
-      aid: aid,
-      bvid: parts[1],
-      key: parts[2],
-      title: parts.length > 3 ? parts[3] : null,
-      upMid: parts.length > 4 ? int.tryParse(parts[4]) : null,
-      durationMs: parts.length > 5 ? int.tryParse(parts[5]) : null,
-    );
-  }
-
-  void _storeWatchLaterPending(_PendingWatchLaterRemoval pending) {
-    final encoded = _encodeWatchLaterPending(pending);
-    final pendingList = _storedWatchLaterPending
-      ..removeWhere((item) => _decodeWatchLaterPending(item)?.key == pending.key)
-      ..add(encoded);
-    unawaited(
-      setting.put(SettingBoxKey.autoRemoveWatchedLaterPending, pendingList),
-    );
-  }
-
-  void _removeStoredWatchLaterPending(String key) {
-    final pendingList = _storedWatchLaterPending
-      ..removeWhere((item) => _decodeWatchLaterPending(item)?.key == key);
-    unawaited(
-      setting.put(SettingBoxKey.autoRemoveWatchedLaterPending, pendingList),
-    );
-  }
-
-  void _removeStoredWatchLaterPendingOnOpen() {
-    if (!Pref.autoRemoveWatchedLater || isFileSource) {
-      return;
-    }
-    final pendingList = _storedWatchLaterPending;
-    if (pendingList.isEmpty) {
-      return;
-    }
-    unawaited(setting.delete(SettingBoxKey.autoRemoveWatchedLaterPending));
-    for (final item in pendingList) {
-      final pending = _decodeWatchLaterPending(item);
-      if (pending == null || _removedWatchLaterKeys.contains(pending.key)) {
-        continue;
-      }
-      if (Pref.autoRemoveWatchedLaterExcludes.contains(pending.key) ||
-          _isProtectedByWatchLaterAutoRemoveRules(
-            durationMs: pending.durationMs ?? 0,
-            title: pending.title,
-            upMid: pending.upMid,
-          )) {
-        continue;
-      }
-      _removedWatchLaterKeys.add(pending.key);
-      Future.microtask(() async {
-        final res = await UserHttp.toViewDel(
-          aids: pending.aid.toString(),
-          showToast: false,
-        );
-        if (res.isSuccess) {
-          mediaList.removeWhere((item) => item.aid == pending.aid);
-          return;
-        }
-        _removedWatchLaterKeys.remove(pending.key);
-        _storeWatchLaterPending(pending);
-        if (kDebugMode) {
-          debugPrint('stored auto remove watch later failed: $res');
-        }
-      });
-    }
-  }
-
-  bool _isLastPartForWatchLaterRemoval() {
-    if (!isUgc) {
-      return true;
-    }
-    try {
-      final pages = Get.find<UgcIntroController>(
-        tag: heroTag,
-      ).videoDetail.value.pages;
-      if (pages == null || pages.length <= 1) {
-        return true;
-      }
-      final index = pages.indexWhere((item) => item.cid == cid.value);
-      return index == -1 || index == pages.length - 1;
-    } catch (_) {
-      return true;
-    }
-  }
-
-  String? _currentWatchLaterAutoRemoveTitle() {
-    try {
-      if (isUgc) {
-        return Get.find<UgcIntroController>(
-          tag: heroTag,
-        ).videoDetail.value.title;
-      }
-      final ctr = Get.find<PgcIntroController>(tag: heroTag);
-      return [
-        ctr.pgcItem.title,
-        ctr.videoDetail.value.title,
-      ].whereType<String>().where((item) => item.isNotEmpty).join(' ');
-    } catch (_) {
-      final title = args['title'];
-      return title is String ? title : null;
-    }
-  }
-
-  int? _currentWatchLaterAutoRemoveUpMid() {
-    try {
-      if (isUgc) {
-        return Get.find<UgcIntroController>(
-          tag: heroTag,
-        ).videoDetail.value.owner?.mid;
-      }
-      return Get.find<PgcIntroController>(tag: heroTag).pgcItem.upInfo?.mid;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  bool _isProtectedByWatchLaterAutoRemoveRules({
-    required int durationMs,
-    String? title,
-    int? upMid,
-  }) {
-    final keywords = Pref.autoRemoveWatchedLaterTitleKeywords
-        .split(RegExp(r'[\n|]+'))
-        .map((item) => item.trim().toLowerCase())
-        .where((item) => item.isNotEmpty);
-    if (keywords.isNotEmpty) {
-      final effectiveTitle =
-          title?.toLowerCase() ??
-          _currentWatchLaterAutoRemoveTitle()?.toLowerCase() ??
-          '';
-      if (keywords.any(effectiveTitle.contains)) {
-        return true;
-      }
-    }
-
-    final upMids = Pref.autoRemoveWatchedLaterUpMids;
-    if (upMids.isNotEmpty) {
-      final effectiveUpMid = upMid ?? _currentWatchLaterAutoRemoveUpMid();
-      if (effectiveUpMid != null && upMids.contains(effectiveUpMid)) {
-        return true;
-      }
-    }
-
-    final minDuration = Pref.autoRemoveWatchedLaterMinDuration;
-    if (minDuration > 0 && durationMs >= minDuration * 1000) {
-      return true;
-    }
-
-    return false;
-  }
-
-  void markWatchLaterAutoRemoveIfNeeded(Duration position) {
-    final key = _watchLaterRemovalKey(aid, bvid);
-    if (!Pref.autoRemoveWatchedLater ||
-        sourceType != SourceType.watchLater ||
-        isFileSource ||
-        Pref.autoRemoveWatchedLaterExcludes.contains(key) ||
-        !_isLastPartForWatchLaterRemoval()) {
-      return;
-    }
-
-    final durationMs = data.timeLength;
-    if (durationMs == null || durationMs <= 0) {
-      return;
-    }
-    final title = _currentWatchLaterAutoRemoveTitle();
-    final upMid = _currentWatchLaterAutoRemoveUpMid();
-    if (_isProtectedByWatchLaterAutoRemoveRules(
-      durationMs: durationMs,
-      title: title,
-      upMid: upMid,
-    )) {
-      return;
-    }
-    if (position.inMilliseconds / durationMs < _watchLaterAutoRemoveThreshold) {
-      return;
-    }
-
-    if (_removedWatchLaterKeys.contains(key) ||
-        _pendingWatchLaterRemoval?.key == key) {
-      return;
-    }
-    _pendingWatchLaterRemoval = _PendingWatchLaterRemoval(
-      aid: aid,
-      bvid: bvid,
-      key: key,
-      title: title,
-      upMid: upMid,
-      durationMs: durationMs,
-    );
-    _storeWatchLaterPending(_pendingWatchLaterRemoval!);
-  }
-
-  void clearPendingWatchLaterAutoRemove(String key) {
-    if (_pendingWatchLaterRemoval?.key == key) {
-      _pendingWatchLaterRemoval = null;
-    }
-    _removeStoredWatchLaterPending(key);
-  }
-
-  void removePendingWatchLaterAfterAdvance() {
-    if (!Pref.autoRemoveWatchedLater || sourceType != SourceType.watchLater) {
-      return;
-    }
-    final pending = _pendingWatchLaterRemoval;
-    if (pending == null || _removedWatchLaterKeys.contains(pending.key)) {
-      return;
-    }
-    if (Pref.autoRemoveWatchedLaterExcludes.contains(pending.key)) {
-      _pendingWatchLaterRemoval = null;
-      _removeStoredWatchLaterPending(pending.key);
-      return;
-    }
-
-    _pendingWatchLaterRemoval = null;
-    _removeStoredWatchLaterPending(pending.key);
-    _removedWatchLaterKeys.add(pending.key);
-    Future.microtask(() async {
-      final res = await UserHttp.toViewDel(
-        aids: pending.aid.toString(),
-        showToast: false,
-      );
-      if (res.isSuccess) {
-        mediaList.removeWhere((item) => item.aid == pending.aid);
-        return;
-      }
-      _removedWatchLaterKeys.remove(pending.key);
-      if (kDebugMode) {
-        debugPrint('auto remove watch later failed: $res');
-      }
-      SmartDialog.showToast('稍后再看自动清理失败');
-    });
-  }
+  void removePendingWatchLaterAfterAdvance() =>
+      watchLaterCleaner.removePendingAfterAdvance();
 
   Future<void> _setSubtitle(List<Subtitle> sub) async {
     subtitles.value = sub;
@@ -1861,20 +1605,3 @@ class VideoDetailController extends GetxController
   }
 }
 
-class _PendingWatchLaterRemoval {
-  final int aid;
-  final String bvid;
-  final String key;
-  final String? title;
-  final int? upMid;
-  final int? durationMs;
-
-  const _PendingWatchLaterRemoval({
-    required this.aid,
-    required this.bvid,
-    required this.key,
-    this.title,
-    this.upMid,
-    this.durationMs,
-  });
-}

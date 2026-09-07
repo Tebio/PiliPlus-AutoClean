@@ -2,7 +2,9 @@ name: Sync Upstream
 
 on:
   schedule:
-    - cron: "17 */6 * * *"
+    # 2026-09-07 用户裁决：上游同步从每 6 小时降为每月 1 次（每月 1 日 02:17 UTC）。
+    # 需要立即跟上游时用 Actions 页 workflow_dispatch 手动触发。
+    - cron: "17 2 1 * *"
   workflow_dispatch:
 
 permissions:
@@ -65,6 +67,7 @@ jobs:
             safe_ours_files=(
               "lib/scripts/patch.ps1"
               "lib/scripts/autoclean_upstream_hotfix.ps1"
+              "lib/autoclean/watch_later_cleaner.dart"
               ".github/workflows/build.yml"
               ".github/workflows/sync-upstream.yml"
               ".github/workflows/win_x64.yml"

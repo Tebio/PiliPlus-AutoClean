@@ -82,7 +82,12 @@ Assert-FileContains `
 Assert-FileContains `
   -Path 'lib/pages/video/controller.dart' `
   -Pattern 'markWatchLaterAutoRemoveIfNeeded' `
-  -Message 'Watch later autoclean marker logic was lost.'
+  -Message 'Watch later autoclean marker delegate was lost.'
+
+Assert-FileContains `
+  -Path 'lib/pages/video/controller.dart' `
+  -Pattern 'WatchLaterCleaner' `
+  -Message 'AutoClean overlay hook (watchLaterCleaner) was lost from video controller.'
 
 Assert-FileNotContains `
   -Path 'lib/pages/video/view.dart' `
@@ -90,19 +95,24 @@ Assert-FileNotContains `
   -Message 'Watch later autoclean is armed by playback progress again.'
 
 Assert-FileContains `
-  -Path 'lib/pages/video/controller.dart' `
+  -Path 'lib/autoclean/watch_later_cleaner.dart' `
   -Pattern 'autoRemoveWatchedLaterPending' `
   -Message 'Persistent pending removal queue was lost.'
 
 Assert-FileContains `
-  -Path 'lib/pages/video/controller.dart' `
+  -Path 'lib/autoclean/watch_later_cleaner.dart' `
   -Pattern "parts\.length < 7 \|\| parts\[6\] != 'completed'" `
   -Message 'Legacy progress-based pending removals are accepted again.'
 
 Assert-FileContains `
-  -Path 'lib/pages/later/controller.dart' `
-  -Pattern '_shouldAutoRemoveViewedItem' `
+  -Path 'lib/autoclean/watch_later_cleaner.dart' `
+  -Pattern 'shouldAutoRemoveViewedItem' `
   -Message 'Server-side watched item cleanup was lost.'
+
+Assert-FileContains `
+  -Path 'lib/pages/later/controller.dart' `
+  -Pattern 'WatchLaterCleaner.shouldAutoRemoveViewedItem' `
+  -Message 'Later page no longer hooks into the AutoClean overlay module.'
 
 Assert-FileContains `
   -Path '.github/workflows/sync-upstream.yml' `
@@ -130,17 +140,17 @@ Assert-FileContains `
   -Message 'Dynamic cover watch later button was lost.'
 
 Assert-FileContains `
-  -Path 'lib/pages/video/controller.dart' `
+  -Path 'lib/autoclean/watch_later_cleaner.dart' `
   -Pattern 'autoRemoveWatchedLaterTitleKeywords' `
   -Message 'Watch later title keyword protection was lost.'
 
 Assert-FileContains `
-  -Path 'lib/pages/video/controller.dart' `
+  -Path 'lib/autoclean/watch_later_cleaner.dart' `
   -Pattern 'autoRemoveWatchedLaterUpMids' `
   -Message 'Watch later UP protection was lost.'
 
 Assert-FileContains `
-  -Path 'lib/pages/video/controller.dart' `
+  -Path 'lib/autoclean/watch_later_cleaner.dart' `
   -Pattern 'autoRemoveWatchedLaterMinDuration' `
   -Message 'Watch later duration protection was lost.'
 
