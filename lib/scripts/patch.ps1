@@ -2,11 +2,6 @@ param(
     [string]$platform = ""
 )
 
-$AutoCleanHotfix = "lib/scripts/autoclean_upstream_hotfix.ps1"
-if (Test-Path -LiteralPath $AutoCleanHotfix) {
-    & $AutoCleanHotfix
-}
-
 git config --global user.name "ci"
 git config --global user.email "example@example.com"
 

@@ -55,6 +55,7 @@ jobs:
               "lib/pages/audio/controller.dart"
               "lib/pages/audio/view.dart"
               "lib/plugin/pl_player/controller.dart"
+              "lib/scripts/patch.ps1"
             )
             for file in "${safe_theirs_files[@]}"; do
               if git ls-files -u -- "$file" | grep -q .; then
@@ -65,7 +66,6 @@ jobs:
             done
 
             safe_ours_files=(
-              "lib/scripts/patch.ps1"
               "lib/scripts/autoclean_upstream_hotfix.ps1"
               "lib/autoclean/watch_later_cleaner.dart"
               ".github/workflows/build.yml"
@@ -123,7 +123,9 @@ jobs:
       - name: Apply local Flutter patches
         if: steps.merge_upstream.outputs.changed == 'true'
         shell: pwsh
-        run: lib/scripts/patch.ps1 android
+        run: |
+          lib/scripts/autoclean_upstream_hotfix.ps1
+          lib/scripts/patch.ps1 android
         continue-on-error: true
 
       - name: Commit local sync patches

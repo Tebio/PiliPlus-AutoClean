@@ -59,7 +59,11 @@ jobs:
 
       - name: Apply local Flutter patches
         shell: pwsh
-        run: lib/scripts/patch.ps1 android
+        # hotfix（我们的）与 patch.ps1（纯上游）分开调用——patch.ps1 全文跟随上游，
+        # 防止 safe_ours 冻结导致的补丁脚本过期（2026-09-07 四连败根因）
+        run: |
+          lib/scripts/autoclean_upstream_hotfix.ps1
+          lib/scripts/patch.ps1 android
         continue-on-error: true
 
       - name: Write Android signing key
