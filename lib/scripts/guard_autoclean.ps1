@@ -155,6 +155,11 @@ Assert-FileContains `
   -Message 'Build failure issue reporting was lost.'
 
 Assert-FileContains `
+  -Path 'lib/common/widgets/watch_later_button.dart' `
+  -Pattern '_toggleWatchLater' `
+  -Message 'Watch later button toggle-off (tap again to cancel) was lost.'
+
+Assert-FileContains `
   -Path 'lib/common/widgets/video_card/video_card_v.dart' `
   -Pattern 'WatchLaterButton' `
   -Message 'Home cover watch later button was lost.'
