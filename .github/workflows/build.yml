@@ -43,10 +43,12 @@ jobs:
           set -e
           git clone --depth 1 --branch 3.47.2 https://github.com/flutter/flutter.git /tmp/flutter-sdk
           cd /tmp/flutter-sdk
-          # patch.ps1 $picks 需要的框架 hotfix commit。必须 --depth 2（连父提交一起抓）：
-          # 只有 commit 没有父树，cherry-pick 算不出 diff，会退化成全文件 add/add 冲突
-          # （2026-09-07 实证：pubspec.yaml 被写入冲突标记，工具重建直接解析炸）。
-          git fetch --depth 2 origin beb2ad17004a1b118ff2bd09f55cee23198f6652
+          # patch.ps1 若声明了 cherry-pick 目标（$Xxx = "<40位sha>"），带父树补抓
+          # （--depth 2：缺父树 cherry-pick 会退化成全文件 add/add 冲突，2026-09-07 实证）。
+          # 随上游 patch.ps1 自动适应，不再硬编码 commit。
+          for sha in $(grep -oE '"[0-9a-f]{40}"' "$GITHUB_WORKSPACE/lib/scripts/patch.ps1" | tr -d '"' | sort -u); do
+            git fetch --depth 2 origin "$sha" || echo "warn: fetch $sha failed (可能已合入)"
+          done
           git config --global --add safe.directory /tmp/flutter-sdk
           echo "/tmp/flutter-sdk/bin" >> "$GITHUB_PATH"
           # patch.ps1 依赖这个环境变量定位框架源码（flutter-action 原本会设置）
