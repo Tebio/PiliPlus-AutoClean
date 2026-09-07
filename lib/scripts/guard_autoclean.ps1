@@ -115,6 +115,21 @@ Assert-FileContains `
   -Message 'Later page no longer hooks into the AutoClean overlay module.'
 
 Assert-FileContains `
+  -Path 'lib/autoclean/watch_later_cleaner.dart' `
+  -Pattern 'drainPendingOnRefresh' `
+  -Message 'Watch later refresh-time pending drain was lost.'
+
+Assert-FileContains `
+  -Path 'lib/pages/later/controller.dart' `
+  -Pattern 'drainPendingOnRefresh' `
+  -Message 'Later page refresh no longer drains armed pending removals.'
+
+Assert-FileContains `
+  -Path 'lib/pages/video/controller.dart' `
+  -Pattern 'watchLaterCleaner\.markAutoRemoveIfNeeded' `
+  -Message 'Exit-time (onClose) watch later arming hook was lost.'
+
+Assert-FileContains `
   -Path '.github/workflows/sync-upstream.yml' `
   -Pattern 'Guard AutoClean customizations' `
   -Message 'Upstream sync no longer guards AutoClean customizations.'

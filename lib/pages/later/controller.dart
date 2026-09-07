@@ -115,6 +115,14 @@ class LaterController extends MultiSelectController<LaterData, LaterItemModel>
       return result;
     }
 
+    // AutoClean：刷新时先执行已武装的待删除队列（看完/达阈值退出的条目），
+    // 本地剔除返回值以绕开服务端删除延迟导致的复现
+    final drainedAids = await WatchLaterCleaner.drainPendingOnRefresh();
+    if (drainedAids != null && drainedAids.isNotEmpty) {
+      result.response.list
+          ?.removeWhere((item) => drainedAids.contains(item.aid));
+    }
+
     final watchedAids = result.response.list
         ?.where(WatchLaterCleaner.shouldAutoRemoveViewedItem)
         .map((item) => item.aid!)

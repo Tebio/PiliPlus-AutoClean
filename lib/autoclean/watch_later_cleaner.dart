@@ -18,6 +18,7 @@ import 'package:PiliPlus/models_new/later/list.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/pgc/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/controller.dart';
+import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/foundation.dart';
@@ -85,6 +86,12 @@ class WatchLaterCleaner {
       ].join('\t');
 
   PendingWatchLaterRemoval? _decodePending(String value) {
+    return decodePending(value);
+  }
+
+  /// 静态版解码（later 页清仓等无控制器场景用）。
+  /// 旧版按进度武装的遗留记录没有 'completed' 标记，一律拒绝执行。
+  static PendingWatchLaterRemoval? decodePending(String value) {
     final parts = value.split('\t');
     // 旧版按进度武装的遗留记录没有 'completed' 标记，一律拒绝执行
     if (parts.length < 7 || parts[6] != 'completed') {
@@ -221,6 +228,36 @@ class WatchLaterCleaner {
 
   // ── 保护规则（标题关键词 / UP 主 / 最短时长）─────────────────
 
+  /// 静态版：只用显式传入的数据判定（无控制器回退），later 页清仓用。
+  static bool isProtectedByRulesData({
+    required int durationMs,
+    String? title,
+    int? upMid,
+  }) {
+    final keywords = Pref.autoRemoveWatchedLaterTitleKeywords
+        .split(RegExp(r'[\n|]+'))
+        .map((item) => item.trim().toLowerCase())
+        .where((item) => item.isNotEmpty);
+    if (keywords.isNotEmpty) {
+      final effectiveTitle = title?.toLowerCase() ?? '';
+      if (keywords.any(effectiveTitle.contains)) {
+        return true;
+      }
+    }
+
+    final upMids = Pref.autoRemoveWatchedLaterUpMids;
+    if (upMids.isNotEmpty && upMid != null && upMids.contains(upMid)) {
+      return true;
+    }
+
+    final minDuration = Pref.autoRemoveWatchedLaterMinDuration;
+    if (minDuration > 0 && durationMs >= minDuration * 1000) {
+      return true;
+    }
+
+    return false;
+  }
+
   bool isProtectedByRules({
     required int durationMs,
     String? title,
@@ -342,6 +379,63 @@ class WatchLaterCleaner {
       }
       SmartDialog.showToast('稍后再看自动清理失败');
     });
+  }
+
+  // ── 稍后再看页面刷新：执行已武装的待删除队列 ─────────────────
+  // 2026-09-07 修复「进度达标退出后刷新不删」：旧链路里武装后的 pending 只在
+  // 「打开下一个稍后再看视频」时执行，刷新 later 页永远轮不到它。现在刷新即清仓。
+  // 返回本次实际删除的 aid 列表（用于本地剔除，绕开服务端删除延迟）；
+  // 删除失败返回 null，队列保留下次再试。
+
+  static Future<List<int>?> drainPendingOnRefresh() async {
+    if (!Pref.autoRemoveWatchedLater) {
+      return null;
+    }
+    final setting = GStorage.setting;
+    final list = List<String>.from(
+      setting.get(
+        SettingBoxKey.autoRemoveWatchedLaterPending,
+        defaultValue: const <String>[],
+      ),
+    );
+    if (list.isEmpty) {
+      return null;
+    }
+    final keep = <String>[];
+    final delAids = <int>[];
+    for (final item in list) {
+      final p = decodePending(item);
+      if (p == null) {
+        continue; // 旧版无 'completed' 标记的遗留记录，直接丢弃
+      }
+      if (Pref.autoRemoveWatchedLaterExcludes.contains(p.key) ||
+          isProtectedByRulesData(
+            durationMs: p.durationMs ?? 0,
+            title: p.title,
+            upMid: p.upMid,
+          )) {
+        keep.add(item);
+        continue;
+      }
+      delAids.add(p.aid);
+    }
+    if (delAids.isEmpty) {
+      if (keep.length != list.length) {
+        unawaited(
+          setting.put(SettingBoxKey.autoRemoveWatchedLaterPending, keep),
+        );
+      }
+      return null;
+    }
+    final res = await UserHttp.toViewDel(
+      aids: delAids.join(','),
+      showToast: false,
+    );
+    if (!res.isSuccess) {
+      return null;
+    }
+    unawaited(setting.put(SettingBoxKey.autoRemoveWatchedLaterPending, keep));
+    return delAids;
   }
 
   // ── 稍后再看页面：服务端已看完条目自动删（静态，Hook: later/controller）──

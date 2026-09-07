@@ -1250,6 +1250,11 @@ class VideoDetailController extends GetxController
 
   @override
   void onClose() {
+    // AutoClean：退出播放页时进度达标即武装待删除（onClose 不是
+    // positionListener，不违反 guard 禁令），刷新稍后再看页时清仓
+    watchLaterCleaner.markAutoRemoveIfNeeded(
+      Duration(seconds: plPlayerController.position.value),
+    );
     cid.close();
     if (isFileSource) {
       cacheLocalProgress();
