@@ -38,8 +38,11 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version-file: pubspec.yaml
-          cache: true
+          flutter-version: 3.47.2
+          # 2026-09-07: 关掉缓存——缓存里旧版(3.47.1)工具快照混进新 SDK 会触发
+          # flutter tool 自举 pub upgrade，撞上 pub.dev 新版 dwds 的 SDK 下限直接炸。
+          # 干净 SDK 自带预编译工具快照，不需要自举。
+          cache: false
 
       - name: Apply local Flutter patches
         shell: pwsh
