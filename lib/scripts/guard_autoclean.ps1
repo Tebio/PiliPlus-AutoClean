@@ -55,6 +55,16 @@ Assert-FileContains `
   -Message 'MediaHelper package no longer matches the AutoClean Android namespace.'
 
 Assert-FileContains `
+  -Path 'android/app/src/main/kotlin/com/example/piliplus/BiliDocumentsProvider.kt' `
+  -Pattern 'package com\.tebio\.piliplus\.autoclean' `
+  -Message 'BiliDocumentsProvider package no longer matches the AutoClean Android namespace.'
+
+Assert-FileContains `
+  -Path 'android/app/src/main/kotlin/com/example/piliplus/Utils.kt' `
+  -Pattern 'package com\.tebio\.piliplus\.autoclean' `
+  -Message 'Utils.kt package no longer matches the AutoClean Android namespace.'
+
+Assert-FileContains `
   -Path 'lib/common/constants.dart' `
   -Pattern 'PiliPlus AutoClean' `
   -Message 'AutoClean app name constant was lost.'

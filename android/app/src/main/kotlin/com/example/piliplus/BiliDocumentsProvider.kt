@@ -1,4 +1,4 @@
-package com.example.piliplus
+package com.tebio.piliplus.autoclean
 
 import android.annotation.SuppressLint
 import android.content.Context
