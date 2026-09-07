@@ -50,8 +50,9 @@ jobs:
           mkdir -p /tmp/flutter-sdk
           tar -xJf /tmp/flutter.tar.xz -C /tmp/flutter-sdk
           echo "/tmp/flutter-sdk/flutter/bin" >> "$GITHUB_PATH"
-          flutter --version
-          dart --version
+          # 注意：$GITHUB_PATH 只对后续 step 生效，本 step 内必须用全路径验证
+          /tmp/flutter-sdk/flutter/bin/flutter --version
+          /tmp/flutter-sdk/flutter/bin/dart --version
 
       - name: Apply local Flutter patches
         shell: pwsh
