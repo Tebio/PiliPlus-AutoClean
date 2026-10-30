@@ -4,9 +4,11 @@ import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/svg/play_icon.dart';
 import 'package:PiliPlus/common/widgets/watch_later_button.dart';
+import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:material_ui/material_ui.dart';
 
 Widget videoSeasonWidget(
@@ -51,11 +53,23 @@ Widget videoSeasonWidget(
             clipBehavior: Clip.none,
             children: [
               LayoutBuilder(
-                builder: (context, constraints) => NetworkImgLayer(
-                  width: constraints.maxWidth,
-                  height: constraints.maxWidth / Style.aspectRatio,
-                  src: cover,
-                  quality: 40,
+                builder: (context, constraints) => GestureDetector(
+                  // 长按封面加入稍后再看（卡片级长按仍是动态的更多菜单）
+                  onLongPress:
+                      Pref.coverLongPressLater &&
+                          item.type == 'DYNAMIC_TYPE_AV' &&
+                          (video.bvid?.isNotEmpty == true || video.aid != null)
+                      ? () => UserHttp.toViewLater(
+                          bvid: video.bvid,
+                          aid: video.aid,
+                        )
+                      : null,
+                  child: NetworkImgLayer(
+                    width: constraints.maxWidth,
+                    height: constraints.maxWidth / Style.aspectRatio,
+                    src: cover,
+                    quality: 40,
+                  ),
                 ),
               ),
               if (video.badge?.text case final badge?)
