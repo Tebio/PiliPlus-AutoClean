@@ -165,6 +165,7 @@ abstract final class SettingBoxKey {
       imageSavePath = 'imageSavePath',
       followOrderType = 'followOrderType',
       enableImgMenu = 'enableImgMenu',
+      coverLongPressLater = 'coverLongPressLater',
       showDynDispute = 'showDynDispute',
       touchSlopH = 'touchSlopH',
       floatingNavBar = 'floatingNavBar',

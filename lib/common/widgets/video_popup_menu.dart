@@ -1,4 +1,5 @@
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
+import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/http/video.dart';
 import 'package:PiliPlus/models/home/rcmd/result.dart';
@@ -61,6 +62,15 @@ class VideoPopupMenu extends StatelessWidget {
                       const Icon(MdiIcons.clockTimeEightOutline, size: 16),
                       () => UserHttp.toViewLater(bvid: videoItem.bvid),
                     ),
+                  _VideoCustomAction(
+                    '查看封面',
+                    const Icon(Icons.image_outlined, size: 16),
+                    () => imageSaveDialog(
+                      title: videoItem.title,
+                      cover: videoItem.cover,
+                      bvid: videoItem.bvid,
+                    ),
+                  ),
                   if (videoItem.cid != null && Pref.enableAi)
                     _VideoCustomAction(
                       'AI总结',

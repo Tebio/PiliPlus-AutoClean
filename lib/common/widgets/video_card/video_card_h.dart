@@ -6,12 +6,14 @@ import 'package:PiliPlus/common/widgets/progress_bar/video_progress_indicator.da
 import 'package:PiliPlus/common/widgets/stat/stat.dart';
 import 'package:PiliPlus/common/widgets/video_popup_menu.dart';
 import 'package:PiliPlus/http/search.dart';
+import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/models/horizontal_video_model.dart';
 import 'package:PiliPlus/models_new/video/video_detail/dimension.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:material_ui/material_ui.dart';
 
 // 视频卡片 - 水平布局
@@ -28,11 +30,17 @@ class VideoCardH extends StatelessWidget {
   final ValueChanged<int>? onViewLater;
   final VoidCallback? onRemove;
 
-  void onLongPress() => imageSaveDialog(
-    bvid: videoItem.bvid,
-    title: videoItem.title,
-    cover: videoItem.cover,
-  );
+  void onLongPress() {
+    if (Pref.coverLongPressLater && videoItem.bvid?.isNotEmpty == true) {
+      UserHttp.toViewLater(bvid: videoItem.bvid, aid: videoItem.aid);
+    } else {
+      imageSaveDialog(
+        bvid: videoItem.bvid,
+        title: videoItem.title,
+        cover: videoItem.cover,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

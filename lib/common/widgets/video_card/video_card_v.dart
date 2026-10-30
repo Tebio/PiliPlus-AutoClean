@@ -6,6 +6,7 @@ import 'package:PiliPlus/common/widgets/stat/stat.dart';
 import 'package:PiliPlus/common/widgets/video_popup_menu.dart';
 import 'package:PiliPlus/common/widgets/watch_later_button.dart';
 import 'package:PiliPlus/http/search.dart';
+import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/models/home/rcmd/result.dart';
 import 'package:PiliPlus/models/model_rec_video_item.dart';
 import 'package:PiliPlus/models_new/video/video_detail/dimension.dart';
@@ -16,6 +17,7 @@ import 'package:PiliPlus/utils/extension/dimension_ext.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
@@ -82,11 +84,17 @@ class VideoCardV extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    void onLongPress() => imageSaveDialog(
-      title: videoItem.title,
-      cover: videoItem.cover,
-      bvid: videoItem.bvid,
-    );
+    void onLongPress() {
+      if (Pref.coverLongPressLater && videoItem.goto == 'av') {
+        UserHttp.toViewLater(bvid: videoItem.bvid, aid: videoItem.aid);
+      } else {
+        imageSaveDialog(
+          title: videoItem.title,
+          cover: videoItem.cover,
+          bvid: videoItem.bvid,
+        );
+      }
+    }
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -114,7 +122,8 @@ class VideoCardV extends StatelessWidget {
                             height: maxHeight,
                             borderRadius: const .vertical(top: .circular(12)),
                           ),
-                          if (videoItem.goto == 'av')
+                          if (videoItem.goto == 'av' &&
+                              !Pref.coverLongPressLater)
                             Positioned(
                               top: 7,
                               right: 7,

@@ -466,6 +466,12 @@ List<SettingsModel> get extraSettings => [
     defaultVal: false,
     onChanged: (value) => ImageGridView.enableImgMenu = value,
   ),
+  const SwitchModel(
+    title: '长按封面添加稍后再看',
+    subtitle: '开启：长按视频封面直接加入稍后再看，右上角按钮隐藏，查看封面移至「更多」菜单\n关闭：用封面右上角按钮添加，长按查看封面',
+    leading: Icon(Icons.touch_app_outlined),
+    setKey: SettingBoxKey.coverLongPressLater,
+  ),
   SwitchModel(
     setKey: SettingBoxKey.feedBackEnable,
     onChanged: (value) {

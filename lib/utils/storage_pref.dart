@@ -1094,6 +1094,10 @@ abstract final class Pref {
   static bool get enableImgMenu =>
       _setting.get(SettingBoxKey.enableImgMenu, defaultValue: false);
 
+  // 长按封面 = 添加到稍后再看（关闭则用封面右上角按钮）
+  static bool get coverLongPressLater =>
+      _setting.get(SettingBoxKey.coverLongPressLater, defaultValue: false);
+
   static bool get showDynDispute =>
       _setting.get(SettingBoxKey.showDynDispute, defaultValue: false);
 
