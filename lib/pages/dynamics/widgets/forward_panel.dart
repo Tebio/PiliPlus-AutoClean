@@ -1,10 +1,12 @@
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
+import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/dyn_content.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/module_panel.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -86,6 +88,11 @@ Widget forwardPanel(
         return;
     }
     if (cover != null) {
+      // 长按转发内容＝加稍后再看时，视频类动态不再弹封面弹窗
+      if (Pref.coverLongPressLater && bvid?.isNotEmpty == true) {
+        UserHttp.toViewLater(bvid: bvid);
+        return;
+      }
       imageSaveDialog(
         title: title,
         cover: cover,

@@ -9,6 +9,7 @@ import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 Widget videoSeasonWidget(
@@ -57,12 +58,14 @@ Widget videoSeasonWidget(
                   // 长按封面加入稍后再看（卡片级长按仍是动态的更多菜单）
                   onLongPress:
                       Pref.coverLongPressLater &&
-                          item.type == 'DYNAMIC_TYPE_AV' &&
                           (video.bvid?.isNotEmpty == true || video.aid != null)
-                      ? () => UserHttp.toViewLater(
-                          bvid: video.bvid,
-                          aid: video.aid,
-                        )
+                      ? () {
+                          HapticFeedback.mediumImpact();
+                          UserHttp.toViewLater(
+                            bvid: video.bvid,
+                            aid: video.aid,
+                          );
+                        }
                       : null,
                   child: NetworkImgLayer(
                     width: constraints.maxWidth,

@@ -210,6 +210,16 @@ Assert-FileContains `
   -Message 'Dynamic cover long-press watch later was lost.'
 
 Assert-FileContains `
+  -Path 'lib/pages/dynamics/widgets/dynamic_panel.dart' `
+  -Pattern 'coverLongPressLater' `
+  -Message 'Dynamic card long-press watch later was lost.'
+
+Assert-FileContains `
+  -Path 'lib/pages/dynamics/widgets/forward_panel.dart' `
+  -Pattern 'coverLongPressLater' `
+  -Message 'Forwarded dynamic long-press watch later was lost.'
+
+Assert-FileContains `
   -Path 'lib/autoclean/watch_later_cleaner.dart' `
   -Pattern 'autoRemoveWatchedLaterTitleKeywords' `
   -Message 'Watch later title keyword protection was lost.'
