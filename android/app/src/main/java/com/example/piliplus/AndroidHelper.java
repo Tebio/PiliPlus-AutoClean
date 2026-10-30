@@ -1,6 +1,6 @@
 package com.tebio.piliplus.autoclean;
 
-import static com.example.piliplus.MediaHelper.getRemoteAction;
+import static com.tebio.piliplus.autoclean.MediaHelper.getRemoteAction;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;

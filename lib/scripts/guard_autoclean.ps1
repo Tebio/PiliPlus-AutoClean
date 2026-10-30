@@ -65,6 +65,26 @@ Assert-FileContains `
   -Message 'Utils.kt package no longer matches the AutoClean Android namespace.'
 
 Assert-FileContains `
+  -Path 'android/app/src/main/java/com/example/piliplus/AndroidHelper.java' `
+  -Pattern 'import static com\.tebio\.piliplus\.autoclean\.MediaHelper' `
+  -Message 'AndroidHelper static import drifted off the AutoClean Android namespace (upstream sync fallout).'
+
+Assert-FileNotContains `
+  -Path 'android/app/src/main/java/com/example/piliplus/AndroidHelper.java' `
+  -Pattern 'com\.example\.piliplus' `
+  -Message 'AndroidHelper still references the upstream com.example.piliplus package.'
+
+Assert-FileContains `
+  -Path 'android/app/proguard-rules.pro' `
+  -Pattern 'com\.tebio\.piliplus\.autoclean\.AndroidHelper' `
+  -Message 'ProGuard keep rule lost the AutoClean Android namespace (R8 will strip the JNI class).'
+
+Assert-FileNotContains `
+  -Path 'android/app/proguard-rules.pro' `
+  -Pattern 'com\.example\.piliplus' `
+  -Message 'ProGuard keep rule points at com.example.piliplus instead of the AutoClean namespace.'
+
+Assert-FileContains `
   -Path 'lib/common/constants.dart' `
   -Pattern 'PiliPlus AutoClean' `
   -Message 'AutoClean app name constant was lost.'
