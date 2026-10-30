@@ -34,14 +34,14 @@ jobs:
             android/*.gradle*
             android/**/gradle-wrapper.properties
 
-      - name: Install Flutter 3.47.5 (git clone @ tag, patch-ready)
+      - name: Install Flutter 3.47.9 (git clone @ tag, patch-ready)
         # 2026-09-07: patch.ps1 要在 Flutter 框架源码里 cherry-pick hotfix commit +
         # git apply ~20 个 .patch，所以 FLUTTER_ROOT 必须是 flutter/flutter 的 git 仓库。
         # ① flutter-action 投错包（Dart 3.12.1≠官方 3.47.2 标配 3.13.2）②官方 tar.xz
         # 无 .git 让 cherry-pick 哑火——两条路都死过，改为自己 clone 精确 tag。
         run: |
           set -e
-          git clone --depth 1 --branch 3.47.5 https://github.com/flutter/flutter.git /tmp/flutter-sdk
+          git clone --depth 1 --branch 3.47.9 https://github.com/flutter/flutter.git /tmp/flutter-sdk
           cd /tmp/flutter-sdk
           # patch.ps1 若声明了 cherry-pick 目标（$Xxx = "<40位sha>"），带父树补抓
           # （--depth 2：缺父树 cherry-pick 会退化成全文件 add/add 冲突，2026-09-07 实证）。
@@ -53,7 +53,7 @@ jobs:
           echo "/tmp/flutter-sdk/bin" >> "$GITHUB_PATH"
           # patch.ps1 依赖这个环境变量定位框架源码（flutter-action 原本会设置）
           echo "FLUTTER_ROOT=/tmp/flutter-sdk" >> "$GITHUB_ENV"
-          # 工具自举 + 版本自证（官方 3.47.5 = Dart 3.13.x）
+          # 工具自举 + 版本自证（官方 3.47.9 = Dart 3.13.x）
           /tmp/flutter-sdk/bin/flutter --version
           /tmp/flutter-sdk/bin/dart --version
 

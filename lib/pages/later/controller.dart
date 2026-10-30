@@ -48,11 +48,7 @@ mixin BaseLaterController
   }
 
   // single
-  void toViewDel(
-    BuildContext context,
-    int index,
-    int? aid,
-  ) {
+  void toViewDel(BuildContext context, int index, int aid) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -69,7 +65,7 @@ mixin BaseLaterController
           TextButton(
             onPressed: () async {
               Get.back();
-              final res = await UserHttp.toViewDel(aids: aid.toString());
+              final res = await UserHttp.toViewDel(aids: aid);
               if (res.isSuccess) {
                 // 移除后只移除本地数据，不调用refresh()重新拉取
                 // 否则服务器未同步时刚删除的视频又出现

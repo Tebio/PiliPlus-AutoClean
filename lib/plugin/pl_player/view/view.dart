@@ -22,16 +22,16 @@ import 'package:PiliPlus/models/common/sponsor_block/action_type.dart';
 import 'package:PiliPlus/models/common/sponsor_block/post_segment_model.dart';
 import 'package:PiliPlus/models/common/sponsor_block/segment_type.dart';
 import 'package:PiliPlus/models/common/super_resolution_type.dart';
-import 'package:PiliPlus/models/common/video/video_quality.dart';
+import 'package:PiliPlus/models/common/video/base_quality.dart';
 import 'package:PiliPlus/models/video/play/url.dart';
 import 'package:PiliPlus/models_new/video/video_detail/episode.dart' as ugc;
-import 'package:PiliPlus/models_new/video/video_detail/ugc_season.dart';
 import 'package:PiliPlus/pages/common/common_intro_controller.dart';
 import 'package:PiliPlus/pages/danmaku/danmaku_model.dart';
 import 'package:PiliPlus/pages/live_room/widgets/bottom_control.dart'
     as live_bottom;
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/pgc/controller.dart';
+import 'package:PiliPlus/pages/video/introduction/ugc/controller.dart';
 import 'package:PiliPlus/pages/video/post_panel/popup_menu_text.dart';
 import 'package:PiliPlus/pages/video/post_panel/view.dart';
 import 'package:PiliPlus/pages/video/widgets/header_control.dart';
@@ -52,12 +52,13 @@ import 'package:PiliPlus/plugin/pl_player/widgets/play_pause_btn.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
 import 'package:PiliPlus/utils/connectivity_utils.dart';
+import 'package:PiliPlus/utils/desktop/window_controller.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
-import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
+import 'package:PiliPlus/utils/ios/pip_helper.dart';
 import 'package:PiliPlus/utils/mobile_observer.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -81,7 +82,6 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:material_ui/material_ui.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
-import 'package:window_manager/window_manager.dart';
 
 part 'widgets.dart';
 
@@ -110,15 +110,7 @@ class PLVideoPlayer extends StatefulWidget {
   final Widget headerControl;
   final Widget? bottomControl;
   final Widget? danmuWidget;
-  final void Function([
-    int?,
-    UgcSeason?,
-    List<ugc.BaseEpisodeItem>?,
-    String?,
-    int?,
-    int?,
-  ])?
-  showEpisodes;
+  final ugc.ShowEpisodes? showEpisodes;
   final VoidCallback? showViewPoints;
   final Color fill;
   final Alignment alignment;
@@ -132,8 +124,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
   late AnimationController _animationController;
   late VideoController videoController;
   late final CommonIntroController introController = widget.introController!;
-  late final VideoDetailController videoDetailController =
-      widget.videoDetailController!;
+  PgcIntroController get pgcController => introController as PgcIntroController;
+  UgcIntroController get ugcController => introController as UgcIntroController;
+  late final videoDetailController = widget.videoDetailController!;
 
   final _playerKey = GlobalKey();
   final _videoKey = GlobalKey();
@@ -201,7 +194,6 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
     });
   }
 
-  int? tmpSubtitlePaddingB;
   StreamSubscription? _controlsListener;
   void _onControlChanged(bool val) {
     final visible = val && !plPlayerController.controlsLock.value;
@@ -230,22 +222,30 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
     if (widget.videoDetailController case final controller?) {
       if (controller.vttSubtitlesIndex.value != 0) {
         if (visible) {
-          const int minPadding = 70;
-          if (plPlayerController.subtitlePaddingB < minPadding) {
-            tmpSubtitlePaddingB = plPlayerController.subtitlePaddingB;
-            plPlayerController
-              ..subtitlePaddingB = minPadding
-              ..subtitleConfig.value = plPlayerController.getSubConfig;
-          }
+          _adjustSubPaddingIfNeeded();
         } else {
-          if (tmpSubtitlePaddingB != null) {
-            plPlayerController
-              ..subtitlePaddingB = tmpSubtitlePaddingB!
-              ..subtitleConfig.value = plPlayerController.getSubConfig;
-            tmpSubtitlePaddingB = null;
-          }
+          _resetSubPaddingIfNeeded();
         }
       }
+    }
+  }
+
+  void _adjustSubPaddingIfNeeded() {
+    const int minPadding = 70;
+    if (plPlayerController.subtitlePaddingB < minPadding) {
+      plPlayerController
+        ..tmpSubtitlePaddingB = plPlayerController.subtitlePaddingB
+        ..subtitlePaddingB = minPadding
+        ..updateSubtitleStyle();
+    }
+  }
+
+  void _resetSubPaddingIfNeeded() {
+    if (plPlayerController.tmpSubtitlePaddingB != null) {
+      plPlayerController
+        ..subtitlePaddingB = plPlayerController.tmpSubtitlePaddingB!
+        ..updateSubtitleStyle()
+        ..tmpSubtitlePaddingB = null;
     }
   }
 
@@ -300,14 +300,16 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
 
     if (plPlayerController.enableTapDm) {
       _tapGestureRecognizer = ImmediateTapGestureRecognizer(
-        onTapDown: plPlayerController.enableShowDanmaku.value
+        onTapDown: plPlayerController.enableShowDanmakuAdaptive.value
             ? _onTapDown
             : null,
         onTapUp: _onTapUp,
         onTapCancel: _removeDmAction,
       );
 
-      _danmakuListener = plPlayerController.enableShowDanmaku.listen((value) {
+      _danmakuListener = plPlayerController.enableShowDanmakuAdaptive.listen((
+        value,
+      ) {
         if (!value) _removeDmAction();
         _tapGestureRecognizer.onTapDown = value ? _onTapDown : null;
       });
@@ -332,6 +334,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Keep playing in the PiP window.
+    if (Platform.isIOS && IOSPipHelper.isActive) return;
     if (!plPlayerController.continuePlayInBackground.value) {
       late final player = plPlayerController.videoPlayerController;
       if (const <AppLifecycleState>[.paused, .detached].contains(state)) {
@@ -380,6 +384,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
     _doubleTapGestureRecognizer.dispose();
     _scaleGestureRecognizer.dispose();
     _brightnessListener?.cancel();
+    _resetSubPaddingIfNeeded();
     _controlsListener?.cancel();
     _animationController.dispose();
     _transformationController.dispose();
@@ -397,7 +402,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
   ) {
     final videoDetail = introController.videoDetail.value;
     final isSeason = videoDetail.ugcSeason != null;
-    final isPart = videoDetail.pages != null && videoDetail.pages!.length > 1;
+    final isPart = videoDetail.hasParts;
     final isPgc = !videoDetailController.isUgc;
     final isPlayAll = videoDetailController.isPlayAll;
     final anySeason = isSeason || isPart || isPgc || isPlayAll;
@@ -569,40 +574,15 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           }
           // part -> playAll -> season(pgc)
           if (isPlayAll && !isPart) {
-            widget.showEpisodes?.call();
+            widget.showEpisodes?.call(type: null);
             return;
           }
-          int? index;
-          int currentCid = plPlayerController.cid!;
-          String bvid = plPlayerController.bvid;
-          List<ugc.BaseEpisodeItem> episodes = [];
-          if (isSeason) {
-            final sections = videoDetail.ugcSeason!.sections!;
-            for (int i = 0; i < sections.length; i++) {
-              final episodesList = sections[i].episodes!;
-              for (final item in episodesList) {
-                if (item.cid == currentCid) {
-                  index = i;
-                  episodes = episodesList;
-                  break;
-                }
-              }
-            }
-          } else if (isPart) {
-            episodes = videoDetail.pages!;
-          } else if (isPgc) {
-            episodes =
-                (introController as PgcIntroController).pgcItem.episodes!;
-          }
           widget.showEpisodes?.call(
-            index,
-            isSeason ? videoDetail.ugcSeason! : null,
-            isSeason ? null : episodes,
-            bvid,
-            IdUtils.bv2av(bvid),
-            isSeason && isPart
-                ? videoDetailController.seasonCid ?? currentCid
-                : currentCid,
+            type: isSeason
+                ? .season
+                : isPgc
+                ? .pgc
+                : .part,
           );
         },
       ),
@@ -839,7 +819,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                       }
                     },
                     child: Text(
-                      item.newDesc ?? '',
+                      item.newDesc ?? item.quality.toString(),
                       style: enabled
                           ? const TextStyle(color: Colors.white, fontSize: 13)
                           : const TextStyle(
@@ -902,16 +882,14 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       if (!plPlayerController.isDesktopPip) .fullscreen,
     ];
     return PlayerBar(
-      children: [
-        Row(
-          mainAxisSize: .min,
-          children: userSpecifyItemLeft.map(progressWidget).toList(),
-        ),
-        Row(
-          mainAxisSize: .min,
-          children: userSpecifyItemRight.map(progressWidget).toList(),
-        ),
-      ],
+      left: Row(
+        mainAxisSize: .min,
+        children: userSpecifyItemLeft.map(progressWidget).toList(),
+      ),
+      right: Row(
+        mainAxisSize: .min,
+        children: userSpecifyItemRight.map(progressWidget).toList(),
+      ),
     );
   }
 
@@ -1106,18 +1084,16 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       }
     } else if (_gestureType == .right) {
       // 右边区域
-      final double level = maxHeight * 0.5;
       EasyThrottle.throttle(
         'setVolume',
         const Duration(milliseconds: 20),
-        () {
-          final double volume = clampDouble(
-            plPlayerController.volume.value - delta.dy / level,
+        () => plPlayerController.setVolume(
+          clampDouble(
+            plPlayerController.volume.value - delta.dy / (maxHeight * 0.5),
             0.0,
             plPlayerController.maxVolume,
-          );
-          plPlayerController.setVolume(volume);
-        },
+          ),
+        ),
       );
     }
   }
@@ -1308,18 +1284,17 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         return;
       }
 
-      final double level = maxHeight * 0.5;
       EasyThrottle.throttle(
         'setVolume',
         const Duration(milliseconds: 20),
-        () {
-          final double volume = clampDouble(
-            plPlayerController.volume.value - event.localPanDelta.dy / level,
+        () => plPlayerController.setVolume(
+          clampDouble(
+            plPlayerController.volume.value -
+                event.localPanDelta.dy / (maxHeight * 0.5),
             0.0,
             plPlayerController.maxVolume,
-          );
-          plPlayerController.setVolume(volume);
-        },
+          ),
+        ),
       );
     }
   }
@@ -1386,7 +1361,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         if (plPlayerController.enableTapDm)
           Obx(
             () {
-              if (!plPlayerController.enableShowDanmaku.value) {
+              if (!plPlayerController.enableShowDanmakuAdaptive.value) {
                 return const SizedBox.shrink();
               }
               final dmOffset = _dmOffset.value;
@@ -1607,7 +1582,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                     child: plPlayerController.isDesktopPip
                         ? GestureDetector(
                             behavior: HitTestBehavior.translucent,
-                            onPanStart: (_) => windowManager.startDragging(),
+                            onPanStart: (_) => WindowController.instance.window
+                                ?.startDragging(),
                             child: widget.headerControl,
                           )
                         : widget.headerControl,
@@ -2021,7 +1997,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       child: Obx(
         () => MouseInteractiveViewer(
           scaleEnabled: !plPlayerController.controlsLock.value,
-          pointerSignalFallback: _onPointerSignal,
+          pointerSignalFallback: plPlayerController.enableScrollVolume
+              ? _onPointerSignal
+              : null,
           onPointerPanZoomUpdate: _onPointerPanZoomUpdate,
           onPointerPanZoomEnd: _onPointerPanZoomEnd,
           onPointerDown: _onPointerDown,
