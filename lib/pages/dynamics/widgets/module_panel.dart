@@ -319,3 +319,52 @@ Widget module(
       );
   }
 }
+
+/// 动态卡片的封面信息（转发卡取 orig），无封面返回 null
+({String? title, String? cover, String? bvid})? dynamicCoverInfo(
+  DynamicItemModel item,
+) {
+  final target = item.type == 'DYNAMIC_TYPE_FORWARD' ? item.orig : item;
+  if (target == null) return null;
+  final major = target.modules.moduleDynamic?.major;
+  final (title, cover, bvid) = switch (target.type) {
+    'DYNAMIC_TYPE_AV' => (
+      major?.archive?.title,
+      major?.archive?.cover,
+      major?.archive?.bvid,
+    ),
+    'DYNAMIC_TYPE_UGC_SEASON' => (
+      major?.ugcSeason?.title,
+      major?.ugcSeason?.cover,
+      major?.ugcSeason?.bvid,
+    ),
+    'DYNAMIC_TYPE_PGC' || 'DYNAMIC_TYPE_PGC_UNION' => (
+      major?.pgc?.title,
+      major?.pgc?.cover,
+      null,
+    ),
+    'DYNAMIC_TYPE_COURSES_SEASON' => (
+      major?.courses?.title,
+      major?.courses?.cover,
+      null,
+    ),
+    'DYNAMIC_TYPE_LIVE_RCMD' => (
+      major?.liveRcmd?.title,
+      major?.liveRcmd?.cover,
+      null,
+    ),
+    'DYNAMIC_TYPE_LIVE' => (
+      major?.live?.title,
+      major?.live?.cover,
+      null,
+    ),
+    'DYNAMIC_TYPE_SUBSCRIPTION_NEW' => (
+      major?.subscriptionNew?.liveRcmd?.content?.livePlayInfo?.title,
+      major?.subscriptionNew?.liveRcmd?.content?.livePlayInfo?.cover,
+      null,
+    ),
+    _ => (null, null, null),
+  };
+  if (cover == null) return null;
+  return (title: title, cover: cover, bvid: bvid);
+}

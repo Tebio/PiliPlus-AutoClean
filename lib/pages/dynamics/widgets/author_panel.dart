@@ -4,6 +4,7 @@ import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/dialog/report.dart';
+import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/pendant_avatar.dart';
 import 'package:PiliPlus/common/widgets/translucent_row.dart';
 import 'package:PiliPlus/http/constants.dart';
@@ -13,6 +14,7 @@ import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/http/video.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
+import 'package:PiliPlus/pages/dynamics/widgets/module_panel.dart';
 import 'package:PiliPlus/pages/save_panel/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
@@ -244,21 +246,8 @@ class AuthorPanel extends StatelessWidget {
   }
 
   void morePanel(BuildContext context) {
-    String? bvid;
-    try {
-      String? getBvid(String? type, DynamicMajorModel? major) => switch (type) {
-        'DYNAMIC_TYPE_AV' => major?.archive?.bvid,
-        'DYNAMIC_TYPE_UGC_SEASON' => major?.ugcSeason?.bvid,
-        _ => null,
-      };
-      bvid = getBvid(item.type, item.modules.moduleDynamic?.major);
-      if (bvid == null && item.orig != null) {
-        bvid = getBvid(
-          item.orig!.type,
-          item.orig!.modules.moduleDynamic?.major,
-        );
-      }
-    } catch (_) {}
+    final coverInfo = dynamicCoverInfo(item);
+    final bvid = coverInfo?.bvid;
     final commentType = item.basic!.commentType;
 
     showModalBottomSheet(
@@ -305,6 +294,23 @@ class AuthorPanel extends StatelessWidget {
                   leading: const Icon(Icons.watch_later_outlined, size: 19),
                   title: Text(
                     '稍后再看',
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+              if (coverInfo != null)
+                ListTile(
+                  onTap: () {
+                    Get.back();
+                    imageSaveDialog(
+                      title: coverInfo.title,
+                      cover: coverInfo.cover,
+                      bvid: coverInfo.bvid,
+                    );
+                  },
+                  minLeadingWidth: 0,
+                  leading: const Icon(Icons.image_outlined, size: 19),
+                  title: Text(
+                    '查看封面',
                     style: theme.textTheme.titleSmall,
                   ),
                 ),

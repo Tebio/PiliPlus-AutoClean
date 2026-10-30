@@ -7,6 +7,7 @@ import 'package:PiliPlus/pages/dynamics/widgets/action_panel.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/author_panel.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/dyn_content.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/interaction.dart';
+import 'package:PiliPlus/pages/dynamics/widgets/module_panel.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -146,68 +147,19 @@ class DynamicPanel extends StatelessWidget {
     BuildContext context,
     Function(BuildContext) morePanel,
   ) {
-    String? title;
-    String? cover;
-    String? bvid;
-    late final major = item.modules.moduleDynamic?.major;
-    switch (item.type) {
-      case 'DYNAMIC_TYPE_AV':
-        if (major?.archive case final archive?) {
-          title = archive.title;
-          cover = archive.cover;
-          bvid = archive.bvid;
-        }
-        break;
-      case 'DYNAMIC_TYPE_UGC_SEASON':
-        if (major?.ugcSeason case final ugcSeason?) {
-          title = ugcSeason.title;
-          cover = ugcSeason.cover;
-          bvid = ugcSeason.bvid;
-        }
-        break;
-      case 'DYNAMIC_TYPE_PGC' || 'DYNAMIC_TYPE_PGC_UNION':
-        if (major?.pgc case final pgc?) {
-          title = pgc.title;
-          cover = pgc.cover;
-        }
-        break;
-      case 'DYNAMIC_TYPE_LIVE_RCMD':
-        if (major?.liveRcmd case final liveRcmd?) {
-          title = liveRcmd.title;
-          cover = liveRcmd.cover;
-        }
-        break;
-      case 'DYNAMIC_TYPE_LIVE':
-        if (major?.live case final live?) {
-          title = live.title;
-          cover = live.cover;
-        }
-        break;
-      case 'DYNAMIC_TYPE_COURSES_SEASON':
-        if (major?.courses case final courses?) {
-          title = courses.title;
-          cover = courses.cover;
-        }
-        break;
-      case 'DYNAMIC_TYPE_SUBSCRIPTION_NEW':
-        if (major?.subscriptionNew?.liveRcmd?.content?.livePlayInfo
-            case final livePlayInfo?) {
-          title = livePlayInfo.title;
-          cover = livePlayInfo.cover;
-        }
-        break;
-      default:
-        morePanel(context);
-        return;
+    final info = dynamicCoverInfo(item);
+    if (info == null) {
+      morePanel(context);
+      return;
     }
-    if (Pref.coverLongPressLater && bvid?.isNotEmpty == true) {
-      UserHttp.toViewLater(bvid: bvid);
+    if (Pref.coverLongPressLater && info.bvid?.isNotEmpty == true) {
+      UserHttp.toViewLater(bvid: info.bvid);
       return;
     }
     imageSaveDialog(
-      title: title,
-      cover: cover,
-      bvid: bvid,
+      title: info.title,
+      cover: info.cover,
+      bvid: info.bvid,
     );
   }
 

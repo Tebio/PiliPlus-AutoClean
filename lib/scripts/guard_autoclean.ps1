@@ -220,6 +220,11 @@ Assert-FileContains `
   -Message 'Forwarded dynamic long-press watch later was lost.'
 
 Assert-FileContains `
+  -Path 'lib/pages/dynamics/widgets/author_panel.dart' `
+  -Pattern 'imageSaveDialog' `
+  -Message 'Dynamic more-panel cover entry was lost.'
+
+Assert-FileContains `
   -Path 'lib/autoclean/watch_later_cleaner.dart' `
   -Pattern 'autoRemoveWatchedLaterTitleKeywords' `
   -Message 'Watch later title keyword protection was lost.'
