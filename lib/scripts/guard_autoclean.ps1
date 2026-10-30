@@ -165,6 +165,21 @@ Assert-FileContains `
   -Message 'Home cover watch later button was lost.'
 
 Assert-FileContains `
+  -Path 'lib/common/widgets/video_card/video_card_v.dart' `
+  -Pattern 'coverLongPressLater' `
+  -Message 'Long-press-cover watch later switch was lost.'
+
+Assert-FileContains `
+  -Path 'lib/common/widgets/video_popup_menu.dart' `
+  -Pattern 'imageSaveDialog' `
+  -Message 'View cover entry in the more menu was lost.'
+
+Assert-FileContains `
+  -Path 'lib/pages/setting/models/extra_settings.dart' `
+  -Pattern 'coverLongPressLater' `
+  -Message 'Cover long-press setting entry was lost.'
+
+Assert-FileContains `
   -Path 'lib/pages/dynamics/widgets/video_panel.dart' `
   -Pattern 'WatchLaterButton' `
   -Message 'Dynamic cover watch later button was lost.'
