@@ -87,7 +87,7 @@ class DynamicPanel extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
               child: authorWidget,
             ),
             if (item.modules.moduleDispute case final moduleDispute?)
@@ -131,13 +131,13 @@ class DynamicPanel extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            width: 8,
+            width: 4,
             color: theme.dividerColor.withValues(alpha: 0.05),
           ),
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.only(bottom: 4),
         child: child,
       ),
     );

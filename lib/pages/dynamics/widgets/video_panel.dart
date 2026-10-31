@@ -69,7 +69,7 @@ Widget videoSeasonWidget(
                       : null,
                   child: NetworkImgLayer(
                     width: constraints.maxWidth,
-                    height: constraints.maxWidth / Style.aspectRatio,
+                    height: constraints.maxWidth / Style.aspectRatio16x9,
                     src: cover,
                     quality: 40,
                   ),
